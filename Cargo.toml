@@ -71,6 +71,7 @@ members = [
     "db-migration",
     "util/network-alert",
     "store",
+    "util/indexer-sync",
     "util/indexer",
     "util/chain-iter",
     "util/dao",

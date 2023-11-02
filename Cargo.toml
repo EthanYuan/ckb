@@ -73,6 +73,7 @@ members = [
     "store",
     "util/indexer-sync",
     "util/indexer",
+    "util/indexer-r",
     "util/chain-iter",
     "util/dao",
     "util/test-chain-utils",

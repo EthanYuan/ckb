@@ -930,13 +930,17 @@ dependencies = [
  "ckb-async-runtime",
  "ckb-indexer-sync",
  "ckb-jsonrpc-types",
+ "ckb-logger",
  "ckb-notify",
  "ckb-rocksdb",
+ "ckb-stop-handler",
+ "ckb-store",
  "ckb-types",
  "faster-hex",
  "memchr",
  "numext-fixed-uint",
  "rand 0.8.5",
+ "rhai",
  "serde_json",
  "tempfile",
  "thiserror",
@@ -944,7 +948,7 @@ dependencies = [
 
 [[package]]
 name = "ckb-indexer-sync"
-version = "0.113.0-pre"
+version = "0.114.0-pre"
 dependencies = [
  "ckb-app-config",
  "ckb-async-runtime",
@@ -1363,7 +1367,7 @@ dependencies = [
 
 [[package]]
 name = "ckb-rich-indexer"
-version = "0.113.0-pre"
+version = "0.114.0-pre"
 dependencies = [
  "anyhow",
  "ckb-app-config",
@@ -2795,7 +2799,7 @@ dependencies = [
  "futures-sink",
  "futures-util",
  "http",
- "indexmap 2.0.2",
+ "indexmap 2.1.0",
  "slab",
  "tokio",
  "tokio-util",

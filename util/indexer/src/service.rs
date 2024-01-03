@@ -347,7 +347,8 @@ impl IndexerHandle {
             .unwrap_or(false)
         {
             return Err(Error::invalid_params(
-                "doesn't support search_key.script_search_mode partial search mode",
+                "the CKB indexer doesn't support search_key.script_search_mode partial search mode, \
+                please use the CKB rich-indexer for such search",
             ));
         }
 
@@ -529,7 +530,8 @@ impl IndexerHandle {
             .unwrap_or(false)
         {
             return Err(Error::invalid_params(
-                "doesn't support search_key.script_search_mode partial search mode",
+                "the CKB indexer doesn't support search_key.script_search_mode partial search mode, \
+                please use the CKB rich-indexer for such search",
             ));
         }
 
@@ -545,11 +547,6 @@ impl IndexerHandle {
             if filter.script_len_range.is_some() {
                 return Err(Error::invalid_params(
                     "doesn't support search_key.filter.script_len_range parameter",
-                ));
-            }
-            if filter.output_data.is_some() {
-                return Err(Error::invalid_params(
-                    "doesn't support search_key.filter.output_data parameter",
                 ));
             }
             if filter.output_data_len_range.is_some() {
@@ -808,7 +805,8 @@ impl IndexerHandle {
             .unwrap_or(false)
         {
             return Err(Error::invalid_params(
-                "doesn't support search_key.script_search_mode partial search mode",
+                "the CKB indexer doesn't support search_key.script_search_mode partial search mode, \
+                please use the CKB rich-indexer for such search",
             ));
         }
 

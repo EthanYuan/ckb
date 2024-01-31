@@ -1378,7 +1378,6 @@ dependencies = [
  "serde_json",
  "sql-builder",
  "sqlx",
- "thiserror",
  "tokio",
 ]
 

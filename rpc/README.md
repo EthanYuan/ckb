@@ -31,85 +31,85 @@ The crate `ckb-rpc`'s minimum supported rustc version is 1.71.1.
 
 * [RPC Methods](#rpc-methods)
 
-    * [Module Alert](#module-alert) [👉 OpenRPC spec](http://playground.open-rpc.org/?uiSchema[appBar][ui:title]=CKB-Alert&uiSchema[appBar][ui:splitView]=false&uiSchema[appBar][ui:examplesDropdown]=false&uiSchema[appBar][ui:logoUrl]=https://raw.githubusercontent.com/cryptape/ckb-rpc-resources/main/ckb-logo.jpg&schemaUrl=https://raw.githubusercontent.com/cryptape/ckb-rpc-resources/cb936aa458eaec528378991de5bbe5d51d6ab237/json/alert_rpc_doc.json)
-        * [Method `send_alert`](#method-send_alert)
-    * [Module Chain](#module-chain) [👉 OpenRPC spec](http://playground.open-rpc.org/?uiSchema[appBar][ui:title]=CKB-Chain&uiSchema[appBar][ui:splitView]=false&uiSchema[appBar][ui:examplesDropdown]=false&uiSchema[appBar][ui:logoUrl]=https://raw.githubusercontent.com/cryptape/ckb-rpc-resources/main/ckb-logo.jpg&schemaUrl=https://raw.githubusercontent.com/cryptape/ckb-rpc-resources/cb936aa458eaec528378991de5bbe5d51d6ab237/json/chain_rpc_doc.json)
-        * [Method `get_block`](#method-get_block)
-        * [Method `get_block_by_number`](#method-get_block_by_number)
-        * [Method `get_header`](#method-get_header)
-        * [Method `get_header_by_number`](#method-get_header_by_number)
-        * [Method `get_block_filter`](#method-get_block_filter)
-        * [Method `get_transaction`](#method-get_transaction)
-        * [Method `get_block_hash`](#method-get_block_hash)
-        * [Method `get_tip_header`](#method-get_tip_header)
-        * [Method `get_live_cell`](#method-get_live_cell)
-        * [Method `get_tip_block_number`](#method-get_tip_block_number)
-        * [Method `get_current_epoch`](#method-get_current_epoch)
-        * [Method `get_epoch_by_number`](#method-get_epoch_by_number)
-        * [Method `get_block_economic_state`](#method-get_block_economic_state)
-        * [Method `get_transaction_proof`](#method-get_transaction_proof)
-        * [Method `verify_transaction_proof`](#method-verify_transaction_proof)
-        * [Method `get_transaction_and_witness_proof`](#method-get_transaction_and_witness_proof)
-        * [Method `verify_transaction_and_witness_proof`](#method-verify_transaction_and_witness_proof)
-        * [Method `get_fork_block`](#method-get_fork_block)
-        * [Method `get_consensus`](#method-get_consensus)
-        * [Method `get_block_median_time`](#method-get_block_median_time)
-        * [Method `estimate_cycles`](#method-estimate_cycles)
-        * [Method `get_fee_rate_statics`](#method-get_fee_rate_statics)
-        * [Method `get_fee_rate_statistics`](#method-get_fee_rate_statistics)
-    * [Module Debug](#module-debug) [👉 OpenRPC spec](http://playground.open-rpc.org/?uiSchema[appBar][ui:title]=CKB-Debug&uiSchema[appBar][ui:splitView]=false&uiSchema[appBar][ui:examplesDropdown]=false&uiSchema[appBar][ui:logoUrl]=https://raw.githubusercontent.com/cryptape/ckb-rpc-resources/main/ckb-logo.jpg&schemaUrl=https://raw.githubusercontent.com/cryptape/ckb-rpc-resources/cb936aa458eaec528378991de5bbe5d51d6ab237/json/debug_rpc_doc.json)
-        * [Method `jemalloc_profiling_dump`](#method-jemalloc_profiling_dump)
-        * [Method `update_main_logger`](#method-update_main_logger)
-        * [Method `set_extra_logger`](#method-set_extra_logger)
-    * [Module Experiment](#module-experiment) [👉 OpenRPC spec](http://playground.open-rpc.org/?uiSchema[appBar][ui:title]=CKB-Experiment&uiSchema[appBar][ui:splitView]=false&uiSchema[appBar][ui:examplesDropdown]=false&uiSchema[appBar][ui:logoUrl]=https://raw.githubusercontent.com/cryptape/ckb-rpc-resources/main/ckb-logo.jpg&schemaUrl=https://raw.githubusercontent.com/cryptape/ckb-rpc-resources/cb936aa458eaec528378991de5bbe5d51d6ab237/json/experiment_rpc_doc.json)
-        * [Method `dry_run_transaction`](#method-dry_run_transaction)
-        * [Method `calculate_dao_maximum_withdraw`](#method-calculate_dao_maximum_withdraw)
-    * [Module Indexer](#module-indexer) [👉 OpenRPC spec](http://playground.open-rpc.org/?uiSchema[appBar][ui:title]=CKB-Indexer&uiSchema[appBar][ui:splitView]=false&uiSchema[appBar][ui:examplesDropdown]=false&uiSchema[appBar][ui:logoUrl]=https://raw.githubusercontent.com/cryptape/ckb-rpc-resources/main/ckb-logo.jpg&schemaUrl=https://raw.githubusercontent.com/cryptape/ckb-rpc-resources/cb936aa458eaec528378991de5bbe5d51d6ab237/json/indexer_rpc_doc.json)
-        * [Method `get_indexer_tip`](#method-get_indexer_tip)
-        * [Method `get_cells`](#method-get_cells)
-        * [Method `get_transactions`](#method-get_transactions)
-        * [Method `get_cells_capacity`](#method-get_cells_capacity)
-    * [Module Integration_test](#module-integration_test) [👉 OpenRPC spec](http://playground.open-rpc.org/?uiSchema[appBar][ui:title]=CKB-Integration_test&uiSchema[appBar][ui:splitView]=false&uiSchema[appBar][ui:examplesDropdown]=false&uiSchema[appBar][ui:logoUrl]=https://raw.githubusercontent.com/cryptape/ckb-rpc-resources/main/ckb-logo.jpg&schemaUrl=https://raw.githubusercontent.com/cryptape/ckb-rpc-resources/cb936aa458eaec528378991de5bbe5d51d6ab237/json/integration_test_rpc_doc.json)
-        * [Method `process_block_without_verify`](#method-process_block_without_verify)
-        * [Method `truncate`](#method-truncate)
-        * [Method `generate_block`](#method-generate_block)
-        * [Method `generate_epochs`](#method-generate_epochs)
-        * [Method `notify_transaction`](#method-notify_transaction)
-        * [Method `generate_block_with_template`](#method-generate_block_with_template)
-        * [Method `calculate_dao_field`](#method-calculate_dao_field)
-    * [Module Miner](#module-miner) [👉 OpenRPC spec](http://playground.open-rpc.org/?uiSchema[appBar][ui:title]=CKB-Miner&uiSchema[appBar][ui:splitView]=false&uiSchema[appBar][ui:examplesDropdown]=false&uiSchema[appBar][ui:logoUrl]=https://raw.githubusercontent.com/cryptape/ckb-rpc-resources/main/ckb-logo.jpg&schemaUrl=https://raw.githubusercontent.com/cryptape/ckb-rpc-resources/cb936aa458eaec528378991de5bbe5d51d6ab237/json/miner_rpc_doc.json)
-        * [Method `get_block_template`](#method-get_block_template)
-        * [Method `submit_block`](#method-submit_block)
-    * [Module Net](#module-net) [👉 OpenRPC spec](http://playground.open-rpc.org/?uiSchema[appBar][ui:title]=CKB-Net&uiSchema[appBar][ui:splitView]=false&uiSchema[appBar][ui:examplesDropdown]=false&uiSchema[appBar][ui:logoUrl]=https://raw.githubusercontent.com/cryptape/ckb-rpc-resources/main/ckb-logo.jpg&schemaUrl=https://raw.githubusercontent.com/cryptape/ckb-rpc-resources/cb936aa458eaec528378991de5bbe5d51d6ab237/json/net_rpc_doc.json)
-        * [Method `local_node_info`](#method-local_node_info)
-        * [Method `get_peers`](#method-get_peers)
-        * [Method `get_banned_addresses`](#method-get_banned_addresses)
-        * [Method `clear_banned_addresses`](#method-clear_banned_addresses)
-        * [Method `set_ban`](#method-set_ban)
-        * [Method `sync_state`](#method-sync_state)
-        * [Method `set_network_active`](#method-set_network_active)
-        * [Method `add_node`](#method-add_node)
-        * [Method `remove_node`](#method-remove_node)
-        * [Method `ping_peers`](#method-ping_peers)
-    * [Module Pool](#module-pool) [👉 OpenRPC spec](http://playground.open-rpc.org/?uiSchema[appBar][ui:title]=CKB-Pool&uiSchema[appBar][ui:splitView]=false&uiSchema[appBar][ui:examplesDropdown]=false&uiSchema[appBar][ui:logoUrl]=https://raw.githubusercontent.com/cryptape/ckb-rpc-resources/main/ckb-logo.jpg&schemaUrl=https://raw.githubusercontent.com/cryptape/ckb-rpc-resources/cb936aa458eaec528378991de5bbe5d51d6ab237/json/pool_rpc_doc.json)
-        * [Method `send_transaction`](#method-send_transaction)
-        * [Method `remove_transaction`](#method-remove_transaction)
-        * [Method `tx_pool_info`](#method-tx_pool_info)
-        * [Method `clear_tx_pool`](#method-clear_tx_pool)
-        * [Method `get_raw_tx_pool`](#method-get_raw_tx_pool)
-        * [Method `get_pool_tx_detail_info`](#method-get_pool_tx_detail_info)
-        * [Method `tx_pool_ready`](#method-tx_pool_ready)
-    * [Module Rich_indexer](#module-rich_indexer) [👉 OpenRPC spec](http://playground.open-rpc.org/?uiSchema[appBar][ui:title]=CKB-Rich_indexer&uiSchema[appBar][ui:splitView]=false&uiSchema[appBar][ui:examplesDropdown]=false&uiSchema[appBar][ui:logoUrl]=https://raw.githubusercontent.com/cryptape/ckb-rpc-resources/main/ckb-logo.jpg&schemaUrl=https://raw.githubusercontent.com/cryptape/ckb-rpc-resources/cb936aa458eaec528378991de5bbe5d51d6ab237/json/rich_indexer_rpc_doc.json)
-        * [Method `get_indexer_tip`](#method-get_indexer_tip)
-        * [Method `get_cells`](#method-get_cells)
-        * [Method `get_transactions`](#method-get_transactions)
-        * [Method `get_cells_capacity`](#method-get_cells_capacity)
-    * [Module Stats](#module-stats) [👉 OpenRPC spec](http://playground.open-rpc.org/?uiSchema[appBar][ui:title]=CKB-Stats&uiSchema[appBar][ui:splitView]=false&uiSchema[appBar][ui:examplesDropdown]=false&uiSchema[appBar][ui:logoUrl]=https://raw.githubusercontent.com/cryptape/ckb-rpc-resources/main/ckb-logo.jpg&schemaUrl=https://raw.githubusercontent.com/cryptape/ckb-rpc-resources/cb936aa458eaec528378991de5bbe5d51d6ab237/json/stats_rpc_doc.json)
-        * [Method `get_blockchain_info`](#method-get_blockchain_info)
-        * [Method `get_deployments_info`](#method-get_deployments_info)
-    * [Module Subscription](#module-subscription) [👉 OpenRPC spec](http://playground.open-rpc.org/?uiSchema[appBar][ui:title]=CKB-Subscription&uiSchema[appBar][ui:splitView]=false&uiSchema[appBar][ui:examplesDropdown]=false&uiSchema[appBar][ui:logoUrl]=https://raw.githubusercontent.com/cryptape/ckb-rpc-resources/main/ckb-logo.jpg&schemaUrl=https://raw.githubusercontent.com/cryptape/ckb-rpc-resources/cb936aa458eaec528378991de5bbe5d51d6ab237/json/subscription_rpc_doc.json)
-        * [Method `subscribe`](#method-subscribe)
-        * [Method `unsubscribe`](#method-unsubscribe)
+    * [Module Alert](#module-alert) [👉 OpenRPC spec](http://playground.open-rpc.org/?uiSchema[appBar][ui:title]=CKB-Alert&uiSchema[appBar][ui:splitView]=false&uiSchema[appBar][ui:examplesDropdown]=false&uiSchema[appBar][ui:logoUrl]=https://raw.githubusercontent.com/cryptape/ckb-rpc-resources/main/ckb-logo.jpg&schemaUrl=https://raw.githubusercontent.com/cryptape/ckb-rpc-resources/5d696307edb59dfa198fb78800ae14588d4bafd8/json/alert_rpc_doc.json)
+        * [Method `send_alert`](#alert-send_alert)
+    * [Module Chain](#module-chain) [👉 OpenRPC spec](http://playground.open-rpc.org/?uiSchema[appBar][ui:title]=CKB-Chain&uiSchema[appBar][ui:splitView]=false&uiSchema[appBar][ui:examplesDropdown]=false&uiSchema[appBar][ui:logoUrl]=https://raw.githubusercontent.com/cryptape/ckb-rpc-resources/main/ckb-logo.jpg&schemaUrl=https://raw.githubusercontent.com/cryptape/ckb-rpc-resources/5d696307edb59dfa198fb78800ae14588d4bafd8/json/chain_rpc_doc.json)
+        * [Method `get_block`](#chain-get_block)
+        * [Method `get_block_by_number`](#chain-get_block_by_number)
+        * [Method `get_header`](#chain-get_header)
+        * [Method `get_header_by_number`](#chain-get_header_by_number)
+        * [Method `get_block_filter`](#chain-get_block_filter)
+        * [Method `get_transaction`](#chain-get_transaction)
+        * [Method `get_block_hash`](#chain-get_block_hash)
+        * [Method `get_tip_header`](#chain-get_tip_header)
+        * [Method `get_live_cell`](#chain-get_live_cell)
+        * [Method `get_tip_block_number`](#chain-get_tip_block_number)
+        * [Method `get_current_epoch`](#chain-get_current_epoch)
+        * [Method `get_epoch_by_number`](#chain-get_epoch_by_number)
+        * [Method `get_block_economic_state`](#chain-get_block_economic_state)
+        * [Method `get_transaction_proof`](#chain-get_transaction_proof)
+        * [Method `verify_transaction_proof`](#chain-verify_transaction_proof)
+        * [Method `get_transaction_and_witness_proof`](#chain-get_transaction_and_witness_proof)
+        * [Method `verify_transaction_and_witness_proof`](#chain-verify_transaction_and_witness_proof)
+        * [Method `get_fork_block`](#chain-get_fork_block)
+        * [Method `get_consensus`](#chain-get_consensus)
+        * [Method `get_block_median_time`](#chain-get_block_median_time)
+        * [Method `estimate_cycles`](#chain-estimate_cycles)
+        * [Method `get_fee_rate_statics`](#chain-get_fee_rate_statics)
+        * [Method `get_fee_rate_statistics`](#chain-get_fee_rate_statistics)
+    * [Module Debug](#module-debug) [👉 OpenRPC spec](http://playground.open-rpc.org/?uiSchema[appBar][ui:title]=CKB-Debug&uiSchema[appBar][ui:splitView]=false&uiSchema[appBar][ui:examplesDropdown]=false&uiSchema[appBar][ui:logoUrl]=https://raw.githubusercontent.com/cryptape/ckb-rpc-resources/main/ckb-logo.jpg&schemaUrl=https://raw.githubusercontent.com/cryptape/ckb-rpc-resources/5d696307edb59dfa198fb78800ae14588d4bafd8/json/debug_rpc_doc.json)
+        * [Method `jemalloc_profiling_dump`](#debug-jemalloc_profiling_dump)
+        * [Method `update_main_logger`](#debug-update_main_logger)
+        * [Method `set_extra_logger`](#debug-set_extra_logger)
+    * [Module Experiment](#module-experiment) [👉 OpenRPC spec](http://playground.open-rpc.org/?uiSchema[appBar][ui:title]=CKB-Experiment&uiSchema[appBar][ui:splitView]=false&uiSchema[appBar][ui:examplesDropdown]=false&uiSchema[appBar][ui:logoUrl]=https://raw.githubusercontent.com/cryptape/ckb-rpc-resources/main/ckb-logo.jpg&schemaUrl=https://raw.githubusercontent.com/cryptape/ckb-rpc-resources/5d696307edb59dfa198fb78800ae14588d4bafd8/json/experiment_rpc_doc.json)
+        * [Method `dry_run_transaction`](#experiment-dry_run_transaction)
+        * [Method `calculate_dao_maximum_withdraw`](#experiment-calculate_dao_maximum_withdraw)
+    * [Module Indexer](#module-indexer) [👉 OpenRPC spec](http://playground.open-rpc.org/?uiSchema[appBar][ui:title]=CKB-Indexer&uiSchema[appBar][ui:splitView]=false&uiSchema[appBar][ui:examplesDropdown]=false&uiSchema[appBar][ui:logoUrl]=https://raw.githubusercontent.com/cryptape/ckb-rpc-resources/main/ckb-logo.jpg&schemaUrl=https://raw.githubusercontent.com/cryptape/ckb-rpc-resources/5d696307edb59dfa198fb78800ae14588d4bafd8/json/indexer_rpc_doc.json)
+        * [Method `get_indexer_tip`](#indexer-get_indexer_tip)
+        * [Method `get_cells`](#indexer-get_cells)
+        * [Method `get_transactions`](#indexer-get_transactions)
+        * [Method `get_cells_capacity`](#indexer-get_cells_capacity)
+    * [Module Integration_test](#module-integration_test) [👉 OpenRPC spec](http://playground.open-rpc.org/?uiSchema[appBar][ui:title]=CKB-Integration_test&uiSchema[appBar][ui:splitView]=false&uiSchema[appBar][ui:examplesDropdown]=false&uiSchema[appBar][ui:logoUrl]=https://raw.githubusercontent.com/cryptape/ckb-rpc-resources/main/ckb-logo.jpg&schemaUrl=https://raw.githubusercontent.com/cryptape/ckb-rpc-resources/5d696307edb59dfa198fb78800ae14588d4bafd8/json/integration_test_rpc_doc.json)
+        * [Method `process_block_without_verify`](#integration_test-process_block_without_verify)
+        * [Method `truncate`](#integration_test-truncate)
+        * [Method `generate_block`](#integration_test-generate_block)
+        * [Method `generate_epochs`](#integration_test-generate_epochs)
+        * [Method `notify_transaction`](#integration_test-notify_transaction)
+        * [Method `generate_block_with_template`](#integration_test-generate_block_with_template)
+        * [Method `calculate_dao_field`](#integration_test-calculate_dao_field)
+    * [Module Miner](#module-miner) [👉 OpenRPC spec](http://playground.open-rpc.org/?uiSchema[appBar][ui:title]=CKB-Miner&uiSchema[appBar][ui:splitView]=false&uiSchema[appBar][ui:examplesDropdown]=false&uiSchema[appBar][ui:logoUrl]=https://raw.githubusercontent.com/cryptape/ckb-rpc-resources/main/ckb-logo.jpg&schemaUrl=https://raw.githubusercontent.com/cryptape/ckb-rpc-resources/5d696307edb59dfa198fb78800ae14588d4bafd8/json/miner_rpc_doc.json)
+        * [Method `get_block_template`](#miner-get_block_template)
+        * [Method `submit_block`](#miner-submit_block)
+    * [Module Net](#module-net) [👉 OpenRPC spec](http://playground.open-rpc.org/?uiSchema[appBar][ui:title]=CKB-Net&uiSchema[appBar][ui:splitView]=false&uiSchema[appBar][ui:examplesDropdown]=false&uiSchema[appBar][ui:logoUrl]=https://raw.githubusercontent.com/cryptape/ckb-rpc-resources/main/ckb-logo.jpg&schemaUrl=https://raw.githubusercontent.com/cryptape/ckb-rpc-resources/5d696307edb59dfa198fb78800ae14588d4bafd8/json/net_rpc_doc.json)
+        * [Method `local_node_info`](#net-local_node_info)
+        * [Method `get_peers`](#net-get_peers)
+        * [Method `get_banned_addresses`](#net-get_banned_addresses)
+        * [Method `clear_banned_addresses`](#net-clear_banned_addresses)
+        * [Method `set_ban`](#net-set_ban)
+        * [Method `sync_state`](#net-sync_state)
+        * [Method `set_network_active`](#net-set_network_active)
+        * [Method `add_node`](#net-add_node)
+        * [Method `remove_node`](#net-remove_node)
+        * [Method `ping_peers`](#net-ping_peers)
+    * [Module Pool](#module-pool) [👉 OpenRPC spec](http://playground.open-rpc.org/?uiSchema[appBar][ui:title]=CKB-Pool&uiSchema[appBar][ui:splitView]=false&uiSchema[appBar][ui:examplesDropdown]=false&uiSchema[appBar][ui:logoUrl]=https://raw.githubusercontent.com/cryptape/ckb-rpc-resources/main/ckb-logo.jpg&schemaUrl=https://raw.githubusercontent.com/cryptape/ckb-rpc-resources/5d696307edb59dfa198fb78800ae14588d4bafd8/json/pool_rpc_doc.json)
+        * [Method `send_transaction`](#pool-send_transaction)
+        * [Method `remove_transaction`](#pool-remove_transaction)
+        * [Method `tx_pool_info`](#pool-tx_pool_info)
+        * [Method `clear_tx_pool`](#pool-clear_tx_pool)
+        * [Method `get_raw_tx_pool`](#pool-get_raw_tx_pool)
+        * [Method `get_pool_tx_detail_info`](#pool-get_pool_tx_detail_info)
+        * [Method `tx_pool_ready`](#pool-tx_pool_ready)
+    * [Module Rich_indexer](#module-rich_indexer) [👉 OpenRPC spec](http://playground.open-rpc.org/?uiSchema[appBar][ui:title]=CKB-Rich_indexer&uiSchema[appBar][ui:splitView]=false&uiSchema[appBar][ui:examplesDropdown]=false&uiSchema[appBar][ui:logoUrl]=https://raw.githubusercontent.com/cryptape/ckb-rpc-resources/main/ckb-logo.jpg&schemaUrl=https://raw.githubusercontent.com/cryptape/ckb-rpc-resources/5d696307edb59dfa198fb78800ae14588d4bafd8/json/rich_indexer_rpc_doc.json)
+        * [Method `get_indexer_tip`](#rich_indexer-get_indexer_tip)
+        * [Method `get_cells`](#rich_indexer-get_cells)
+        * [Method `get_transactions`](#rich_indexer-get_transactions)
+        * [Method `get_cells_capacity`](#rich_indexer-get_cells_capacity)
+    * [Module Stats](#module-stats) [👉 OpenRPC spec](http://playground.open-rpc.org/?uiSchema[appBar][ui:title]=CKB-Stats&uiSchema[appBar][ui:splitView]=false&uiSchema[appBar][ui:examplesDropdown]=false&uiSchema[appBar][ui:logoUrl]=https://raw.githubusercontent.com/cryptape/ckb-rpc-resources/main/ckb-logo.jpg&schemaUrl=https://raw.githubusercontent.com/cryptape/ckb-rpc-resources/5d696307edb59dfa198fb78800ae14588d4bafd8/json/stats_rpc_doc.json)
+        * [Method `get_blockchain_info`](#stats-get_blockchain_info)
+        * [Method `get_deployments_info`](#stats-get_deployments_info)
+    * [Module Subscription](#module-subscription) [👉 OpenRPC spec](http://playground.open-rpc.org/?uiSchema[appBar][ui:title]=CKB-Subscription&uiSchema[appBar][ui:splitView]=false&uiSchema[appBar][ui:examplesDropdown]=false&uiSchema[appBar][ui:logoUrl]=https://raw.githubusercontent.com/cryptape/ckb-rpc-resources/main/ckb-logo.jpg&schemaUrl=https://raw.githubusercontent.com/cryptape/ckb-rpc-resources/5d696307edb59dfa198fb78800ae14588d4bafd8/json/subscription_rpc_doc.json)
+        * [Method `subscribe`](#subscription-subscribe)
+        * [Method `unsubscribe`](#subscription-unsubscribe)
 * [RPC Types](#rpc-types)
 
     * [Type `Alert`](#type-alert)
@@ -212,7 +212,7 @@ The crate `ckb-rpc`'s minimum supported rustc version is 1.71.1.
 ## RPC Modules
 
 ### Module `Alert`
-- [👉 OpenRPC spec](http://playground.open-rpc.org/?uiSchema[appBar][ui:title]=CKB-Alert&uiSchema[appBar][ui:splitView]=false&uiSchema[appBar][ui:examplesDropdown]=false&uiSchema[appBar][ui:logoUrl]=https://raw.githubusercontent.com/cryptape/ckb-rpc-resources/main/ckb-logo.jpg&schemaUrl=https://raw.githubusercontent.com/cryptape/ckb-rpc-resources/cb936aa458eaec528378991de5bbe5d51d6ab237/json/alert_rpc_doc.json)
+- [👉 OpenRPC spec](http://playground.open-rpc.org/?uiSchema[appBar][ui:title]=CKB-Alert&uiSchema[appBar][ui:splitView]=false&uiSchema[appBar][ui:examplesDropdown]=false&uiSchema[appBar][ui:logoUrl]=https://raw.githubusercontent.com/cryptape/ckb-rpc-resources/main/ckb-logo.jpg&schemaUrl=https://raw.githubusercontent.com/cryptape/ckb-rpc-resources/5d696307edb59dfa198fb78800ae14588d4bafd8/json/alert_rpc_doc.json)
 
 RPC Module Alert for network alerts.
 
@@ -221,6 +221,7 @@ An alert is a message about critical problems to be broadcast to all nodes via t
 The alerts must be signed by 2-of-4 signatures, where the public keys are hard-coded in the source code
 and belong to early CKB developers.
 
+<a id="alert-send_alert"></a>
 #### Method `send_alert`
 * `send_alert(alert)`
     * `alert`: [`Alert`](#type-alert)
@@ -277,7 +278,7 @@ Response
 ```
 
 ### Module `Chain`
-- [👉 OpenRPC spec](http://playground.open-rpc.org/?uiSchema[appBar][ui:title]=CKB-Chain&uiSchema[appBar][ui:splitView]=false&uiSchema[appBar][ui:examplesDropdown]=false&uiSchema[appBar][ui:logoUrl]=https://raw.githubusercontent.com/cryptape/ckb-rpc-resources/main/ckb-logo.jpg&schemaUrl=https://raw.githubusercontent.com/cryptape/ckb-rpc-resources/cb936aa458eaec528378991de5bbe5d51d6ab237/json/chain_rpc_doc.json)
+- [👉 OpenRPC spec](http://playground.open-rpc.org/?uiSchema[appBar][ui:title]=CKB-Chain&uiSchema[appBar][ui:splitView]=false&uiSchema[appBar][ui:examplesDropdown]=false&uiSchema[appBar][ui:logoUrl]=https://raw.githubusercontent.com/cryptape/ckb-rpc-resources/main/ckb-logo.jpg&schemaUrl=https://raw.githubusercontent.com/cryptape/ckb-rpc-resources/5d696307edb59dfa198fb78800ae14588d4bafd8/json/chain_rpc_doc.json)
 
 RPC Module Chain for methods related to the canonical chain.
 
@@ -302,6 +303,7 @@ A cell is live if
 and
 * it is not found as an input in any transaction in the canonical chain.
 
+<a id="chain-get_block"></a>
 #### Method `get_block`
 * `get_block(block_hash, verbosity, with_cycles)`
     * `block_hash`: [`H256`](#type-h256)
@@ -433,6 +435,7 @@ When specifying with_cycles, the response object will be different like below:
 }
 ```
 
+<a id="chain-get_block_by_number"></a>
 #### Method `get_block_by_number`
 * `get_block_by_number(block_number, verbosity, with_cycles)`
     * `block_number`: [`Uint64`](#type-uint64)
@@ -567,6 +570,7 @@ When specifying with_cycles, the response object will be different like below:
 }
 ```
 
+<a id="chain-get_header"></a>
 #### Method `get_header`
 * `get_header(block_hash, verbosity)`
     * `block_hash`: [`H256`](#type-h256)
@@ -645,6 +649,7 @@ The response looks like below when `verbosity` is 0.
 }
 ```
 
+<a id="chain-get_header_by_number"></a>
 #### Method `get_header_by_number`
 * `get_header_by_number(block_number, verbosity)`
     * `block_number`: [`Uint64`](#type-uint64)
@@ -726,6 +731,7 @@ The response looks like below when `verbosity` is 0.
 }
 ```
 
+<a id="chain-get_block_filter"></a>
 #### Method `get_block_filter`
 * `get_block_filter(block_hash)`
     * `block_hash`: [`H256`](#type-h256)
@@ -779,6 +785,7 @@ The response looks like below when the block have block filter.
 }
 ```
 
+<a id="chain-get_transaction"></a>
 #### Method `get_transaction`
 * `get_transaction(tx_hash, verbosity, only_committed)`
     * `tx_hash`: [`H256`](#type-h256)
@@ -907,6 +914,7 @@ The response looks like below when `verbosity` is 0.
 }
 ```
 
+<a id="chain-get_block_hash"></a>
 #### Method `get_block_hash`
 * `get_block_hash(block_number)`
     * `block_number`: [`Uint64`](#type-uint64)
@@ -953,6 +961,7 @@ Response
 }
 ```
 
+<a id="chain-get_tip_header"></a>
 #### Method `get_tip_header`
 * `get_tip_header(verbosity)`
     * `verbosity`: [`AlertId`](#type-alertid) `|` `null`
@@ -1022,6 +1031,7 @@ The response looks like below when `verbosity` is 0.
 }
 ```
 
+<a id="chain-get_live_cell"></a>
 #### Method `get_live_cell`
 * `get_live_cell(out_point, with_data)`
     * `out_point`: [`OutPoint`](#type-outpoint)
@@ -1092,6 +1102,7 @@ Response
 }
 ```
 
+<a id="chain-get_tip_block_number"></a>
 #### Method `get_tip_block_number`
 * `get_tip_block_number()`
 
@@ -1125,6 +1136,7 @@ Response
 }
 ```
 
+<a id="chain-get_current_epoch"></a>
 #### Method `get_current_epoch`
 * `get_current_epoch()`
 
@@ -1164,6 +1176,7 @@ Response
 }
 ```
 
+<a id="chain-get_epoch_by_number"></a>
 #### Method `get_epoch_by_number`
 * `get_epoch_by_number(epoch_number)`
     * `epoch_number`: [`Uint64`](#type-uint64)
@@ -1213,6 +1226,7 @@ Response
 }
 ```
 
+<a id="chain-get_block_economic_state"></a>
 #### Method `get_block_economic_state`
 * `get_block_economic_state(block_hash)`
     * `block_hash`: [`H256`](#type-h256)
@@ -1280,6 +1294,7 @@ Response
 }
 ```
 
+<a id="chain-get_transaction_proof"></a>
 #### Method `get_transaction_proof`
 * `get_transaction_proof(tx_hashes, block_hash)`
     * `tx_hashes`: `Array<` [`H256`](#type-h256) `>`
@@ -1325,6 +1340,7 @@ Response
 }
 ```
 
+<a id="chain-verify_transaction_proof"></a>
 #### Method `verify_transaction_proof`
 * `verify_transaction_proof(tx_proof)`
     * `tx_proof`: [`TransactionProof`](#type-transactionproof)
@@ -1370,6 +1386,7 @@ Response
 }
 ```
 
+<a id="chain-get_transaction_and_witness_proof"></a>
 #### Method `get_transaction_and_witness_proof`
 * `get_transaction_and_witness_proof(tx_hashes, block_hash)`
     * `tx_hashes`: `Array<` [`H256`](#type-h256) `>`
@@ -1420,6 +1437,7 @@ Response
 }
 ```
 
+<a id="chain-verify_transaction_and_witness_proof"></a>
 #### Method `verify_transaction_and_witness_proof`
 * `verify_transaction_and_witness_proof(tx_proof)`
     * `tx_proof`: [`TransactionAndWitnessProof`](#type-transactionandwitnessproof)
@@ -1470,6 +1488,7 @@ Response
 }
 ```
 
+<a id="chain-get_fork_block"></a>
 #### Method `get_fork_block`
 * `get_fork_block(block_hash, verbosity)`
     * `block_hash`: [`H256`](#type-h256)
@@ -1585,6 +1604,7 @@ The response looks like below when `verbosity` is 0.
 }
 ```
 
+<a id="chain-get_consensus"></a>
 #### Method `get_consensus`
 * `get_consensus()`
 
@@ -1678,6 +1698,7 @@ Response
 }
 ```
 
+<a id="chain-get_block_median_time"></a>
 #### Method `get_block_median_time`
 * `get_block_median_time(block_hash)`
     * `block_hash`: [`H256`](#type-h256)
@@ -1721,6 +1742,7 @@ Response
 }
 ```
 
+<a id="chain-estimate_cycles"></a>
 #### Method `estimate_cycles`
 * `estimate_cycles(tx)`
     * `tx`: [`Transaction`](#type-transaction)
@@ -1803,6 +1825,7 @@ Response
 }
 ```
 
+<a id="chain-get_fee_rate_statics"></a>
 #### Method `get_fee_rate_statics`
 * `get_fee_rate_statics(target)`
     * `target`: [`Uint64`](#type-uint64) `|` `null`
@@ -1848,6 +1871,7 @@ Response
 }
 ```
 
+<a id="chain-get_fee_rate_statistics"></a>
 #### Method `get_fee_rate_statistics`
 * `get_fee_rate_statistics(target)`
     * `target`: [`Uint64`](#type-uint64) `|` `null`
@@ -1894,13 +1918,14 @@ Response
 ```
 
 ### Module `Debug`
-- [👉 OpenRPC spec](http://playground.open-rpc.org/?uiSchema[appBar][ui:title]=CKB-Debug&uiSchema[appBar][ui:splitView]=false&uiSchema[appBar][ui:examplesDropdown]=false&uiSchema[appBar][ui:logoUrl]=https://raw.githubusercontent.com/cryptape/ckb-rpc-resources/main/ckb-logo.jpg&schemaUrl=https://raw.githubusercontent.com/cryptape/ckb-rpc-resources/cb936aa458eaec528378991de5bbe5d51d6ab237/json/debug_rpc_doc.json)
+- [👉 OpenRPC spec](http://playground.open-rpc.org/?uiSchema[appBar][ui:title]=CKB-Debug&uiSchema[appBar][ui:splitView]=false&uiSchema[appBar][ui:examplesDropdown]=false&uiSchema[appBar][ui:logoUrl]=https://raw.githubusercontent.com/cryptape/ckb-rpc-resources/main/ckb-logo.jpg&schemaUrl=https://raw.githubusercontent.com/cryptape/ckb-rpc-resources/5d696307edb59dfa198fb78800ae14588d4bafd8/json/debug_rpc_doc.json)
 
 RPC Module Debug for internal RPC methods.
 
 **This module is for CKB developers and will not guarantee compatibility.** The methods here
 will be changed or removed without advanced notification.
 
+<a id="debug-jemalloc_profiling_dump"></a>
 #### Method `jemalloc_profiling_dump`
 * `jemalloc_profiling_dump()`
 
@@ -1912,6 +1937,7 @@ The file is stored in the server running the CKB node.
 
 The RPC returns the path to the dumped file on success or returns an error on failure.
 
+<a id="debug-update_main_logger"></a>
 #### Method `update_main_logger`
 * `update_main_logger(config)`
     * `config`: [`MainLoggerConfig`](#type-mainloggerconfig)
@@ -1919,6 +1945,7 @@ The RPC returns the path to the dumped file on success or returns an error on fa
 
 Changes main logger config options while CKB is running.
 
+<a id="debug-set_extra_logger"></a>
 #### Method `set_extra_logger`
 * `set_extra_logger(name, config_opt)`
     * `name`: `string`
@@ -1937,7 +1964,7 @@ they only append logs to their log files.
 Removes the logger when this is null.
 
 ### Module `Experiment`
-- [👉 OpenRPC spec](http://playground.open-rpc.org/?uiSchema[appBar][ui:title]=CKB-Experiment&uiSchema[appBar][ui:splitView]=false&uiSchema[appBar][ui:examplesDropdown]=false&uiSchema[appBar][ui:logoUrl]=https://raw.githubusercontent.com/cryptape/ckb-rpc-resources/main/ckb-logo.jpg&schemaUrl=https://raw.githubusercontent.com/cryptape/ckb-rpc-resources/cb936aa458eaec528378991de5bbe5d51d6ab237/json/experiment_rpc_doc.json)
+- [👉 OpenRPC spec](http://playground.open-rpc.org/?uiSchema[appBar][ui:title]=CKB-Experiment&uiSchema[appBar][ui:splitView]=false&uiSchema[appBar][ui:examplesDropdown]=false&uiSchema[appBar][ui:logoUrl]=https://raw.githubusercontent.com/cryptape/ckb-rpc-resources/main/ckb-logo.jpg&schemaUrl=https://raw.githubusercontent.com/cryptape/ckb-rpc-resources/5d696307edb59dfa198fb78800ae14588d4bafd8/json/experiment_rpc_doc.json)
 
 RPC Module Experiment for experimenting methods.
 
@@ -1945,6 +1972,7 @@ RPC Module Experiment for experimenting methods.
 
 The methods here may be removed or changed in future releases without prior notifications.
 
+<a id="experiment-dry_run_transaction"></a>
 #### Method `dry_run_transaction`
 * `dry_run_transaction(tx)`
     * `tx`: [`Transaction`](#type-transaction)
@@ -2027,6 +2055,7 @@ Response
 }
 ```
 
+<a id="experiment-calculate_dao_maximum_withdraw"></a>
 #### Method `calculate_dao_maximum_withdraw`
 * `calculate_dao_maximum_withdraw(out_point, kind)`
     * `out_point`: [`OutPoint`](#type-outpoint)
@@ -2089,10 +2118,11 @@ Response
 ```
 
 ### Module `Indexer`
-- [👉 OpenRPC spec](http://playground.open-rpc.org/?uiSchema[appBar][ui:title]=CKB-Indexer&uiSchema[appBar][ui:splitView]=false&uiSchema[appBar][ui:examplesDropdown]=false&uiSchema[appBar][ui:logoUrl]=https://raw.githubusercontent.com/cryptape/ckb-rpc-resources/main/ckb-logo.jpg&schemaUrl=https://raw.githubusercontent.com/cryptape/ckb-rpc-resources/cb936aa458eaec528378991de5bbe5d51d6ab237/json/indexer_rpc_doc.json)
+- [👉 OpenRPC spec](http://playground.open-rpc.org/?uiSchema[appBar][ui:title]=CKB-Indexer&uiSchema[appBar][ui:splitView]=false&uiSchema[appBar][ui:examplesDropdown]=false&uiSchema[appBar][ui:logoUrl]=https://raw.githubusercontent.com/cryptape/ckb-rpc-resources/main/ckb-logo.jpg&schemaUrl=https://raw.githubusercontent.com/cryptape/ckb-rpc-resources/5d696307edb59dfa198fb78800ae14588d4bafd8/json/indexer_rpc_doc.json)
 
 RPC Module Indexer.
 
+<a id="indexer-get_indexer_tip"></a>
 #### Method `get_indexer_tip`
 * `get_indexer_tip()`
 
@@ -2129,6 +2159,7 @@ Response
 }
 ```
 
+<a id="indexer-get_cells"></a>
 #### Method `get_cells`
 * `get_cells(search_key, order, limit, after)`
     * `search_key`: [`IndexerSearchKey`](#type-indexersearchkey)
@@ -2486,6 +2517,7 @@ Response
 }
 ```
 
+<a id="indexer-get_transactions"></a>
 #### Method `get_transactions`
 * `get_transactions(search_key, order, limit, after)`
     * `search_key`: [`IndexerSearchKey`](#type-indexersearchkey)
@@ -2902,6 +2934,7 @@ Response
 }
 ```
 
+<a id="indexer-get_cells_capacity"></a>
 #### Method `get_cells_capacity`
 * `get_cells_capacity(search_key)`
     * `search_key`: [`IndexerSearchKey`](#type-indexersearchkey)
@@ -2967,10 +3000,11 @@ Response
 ```
 
 ### Module `Integration_test`
-- [👉 OpenRPC spec](http://playground.open-rpc.org/?uiSchema[appBar][ui:title]=CKB-Integration_test&uiSchema[appBar][ui:splitView]=false&uiSchema[appBar][ui:examplesDropdown]=false&uiSchema[appBar][ui:logoUrl]=https://raw.githubusercontent.com/cryptape/ckb-rpc-resources/main/ckb-logo.jpg&schemaUrl=https://raw.githubusercontent.com/cryptape/ckb-rpc-resources/cb936aa458eaec528378991de5bbe5d51d6ab237/json/integration_test_rpc_doc.json)
+- [👉 OpenRPC spec](http://playground.open-rpc.org/?uiSchema[appBar][ui:title]=CKB-Integration_test&uiSchema[appBar][ui:splitView]=false&uiSchema[appBar][ui:examplesDropdown]=false&uiSchema[appBar][ui:logoUrl]=https://raw.githubusercontent.com/cryptape/ckb-rpc-resources/main/ckb-logo.jpg&schemaUrl=https://raw.githubusercontent.com/cryptape/ckb-rpc-resources/5d696307edb59dfa198fb78800ae14588d4bafd8/json/integration_test_rpc_doc.json)
 
 RPC for Integration Test.
 
+<a id="integration_test-process_block_without_verify"></a>
 #### Method `process_block_without_verify`
 * `process_block_without_verify(data, broadcast)`
     * `data`: [`Block`](#type-block)
@@ -3054,6 +3088,7 @@ Response
 }
 ```
 
+<a id="integration_test-truncate"></a>
 #### Method `truncate`
 * `truncate(target_tip_hash)`
     * `target_tip_hash`: [`H256`](#type-h256)
@@ -3090,6 +3125,7 @@ Response
 }
 ```
 
+<a id="integration_test-generate_block"></a>
 #### Method `generate_block`
 * `generate_block()`
 
@@ -3122,6 +3158,7 @@ Response
 }
 ```
 
+<a id="integration_test-generate_epochs"></a>
 #### Method `generate_epochs`
 * `generate_epochs(num_epochs)`
     * `num_epochs`: [`Uint64`](#type-uint64)
@@ -3177,6 +3214,7 @@ Response
 }
 ```
 
+<a id="integration_test-notify_transaction"></a>
 #### Method `notify_transaction`
 * `notify_transaction(transaction)`
     * `transaction`: [`Transaction`](#type-transaction)
@@ -3246,6 +3284,7 @@ Response
 }
 ```
 
+<a id="integration_test-generate_block_with_template"></a>
 #### Method `generate_block_with_template`
 * `generate_block_with_template(block_template)`
     * `block_template`: [`BlockTemplate`](#type-blocktemplate)
@@ -3354,6 +3393,7 @@ Response
 }
 ```
 
+<a id="integration_test-calculate_dao_field"></a>
 #### Method `calculate_dao_field`
 * `calculate_dao_field(block_template)`
     * `block_template`: [`BlockTemplate`](#type-blocktemplate)
@@ -3461,13 +3501,14 @@ Response
 ```
 
 ### Module `Miner`
-- [👉 OpenRPC spec](http://playground.open-rpc.org/?uiSchema[appBar][ui:title]=CKB-Miner&uiSchema[appBar][ui:splitView]=false&uiSchema[appBar][ui:examplesDropdown]=false&uiSchema[appBar][ui:logoUrl]=https://raw.githubusercontent.com/cryptape/ckb-rpc-resources/main/ckb-logo.jpg&schemaUrl=https://raw.githubusercontent.com/cryptape/ckb-rpc-resources/cb936aa458eaec528378991de5bbe5d51d6ab237/json/miner_rpc_doc.json)
+- [👉 OpenRPC spec](http://playground.open-rpc.org/?uiSchema[appBar][ui:title]=CKB-Miner&uiSchema[appBar][ui:splitView]=false&uiSchema[appBar][ui:examplesDropdown]=false&uiSchema[appBar][ui:logoUrl]=https://raw.githubusercontent.com/cryptape/ckb-rpc-resources/main/ckb-logo.jpg&schemaUrl=https://raw.githubusercontent.com/cryptape/ckb-rpc-resources/5d696307edb59dfa198fb78800ae14588d4bafd8/json/miner_rpc_doc.json)
 
 RPC Module Miner for miners.
 
 A miner gets a template from CKB, optionally selects transactions, resolves the PoW puzzle, and
 submits the found new block.
 
+<a id="miner-get_block_template"></a>
 #### Method `get_block_template`
 * `get_block_template(bytes_limit, proposals_limit, max_version)`
     * `bytes_limit`: [`Uint64`](#type-uint64) `|` `null`
@@ -3586,6 +3627,7 @@ Response
 }
 ```
 
+<a id="miner-submit_block"></a>
 #### Method `submit_block`
 * `submit_block(work_id, block)`
     * `work_id`: `string`
@@ -3609,7 +3651,7 @@ Request
   "jsonrpc": "2.0",
   "method": "submit_block",
   "params": [
-    "example",
+    "work_id_example",
     {
       "header": {
         "compact_target": "0x1e083126",
@@ -3675,10 +3717,11 @@ Response
 ```
 
 ### Module `Net`
-- [👉 OpenRPC spec](http://playground.open-rpc.org/?uiSchema[appBar][ui:title]=CKB-Net&uiSchema[appBar][ui:splitView]=false&uiSchema[appBar][ui:examplesDropdown]=false&uiSchema[appBar][ui:logoUrl]=https://raw.githubusercontent.com/cryptape/ckb-rpc-resources/main/ckb-logo.jpg&schemaUrl=https://raw.githubusercontent.com/cryptape/ckb-rpc-resources/cb936aa458eaec528378991de5bbe5d51d6ab237/json/net_rpc_doc.json)
+- [👉 OpenRPC spec](http://playground.open-rpc.org/?uiSchema[appBar][ui:title]=CKB-Net&uiSchema[appBar][ui:splitView]=false&uiSchema[appBar][ui:examplesDropdown]=false&uiSchema[appBar][ui:logoUrl]=https://raw.githubusercontent.com/cryptape/ckb-rpc-resources/main/ckb-logo.jpg&schemaUrl=https://raw.githubusercontent.com/cryptape/ckb-rpc-resources/5d696307edb59dfa198fb78800ae14588d4bafd8/json/net_rpc_doc.json)
 
 RPC Module Net for P2P network.
 
+<a id="net-local_node_info"></a>
 #### Method `local_node_info`
 * `local_node_info()`
 
@@ -3742,6 +3785,7 @@ Response
 }
 ```
 
+<a id="net-get_peers"></a>
 #### Method `get_peers`
 * `get_peers()`
 
@@ -3889,6 +3933,7 @@ Response
 }
 ```
 
+<a id="net-get_banned_addresses"></a>
 #### Method `get_banned_addresses`
 * `get_banned_addresses()`
 
@@ -3926,6 +3971,7 @@ Response
 }
 ```
 
+<a id="net-clear_banned_addresses"></a>
 #### Method `clear_banned_addresses`
 * `clear_banned_addresses()`
 
@@ -3956,6 +4002,7 @@ Response
 }
 ```
 
+<a id="net-set_ban"></a>
 #### Method `set_ban`
 * `set_ban(address, command, ban_time, absolute, reason)`
     * `address`: `string`
@@ -4012,6 +4059,7 @@ Response
 }
 ```
 
+<a id="net-sync_state"></a>
 #### Method `sync_state`
 * `sync_state()`
 
@@ -4051,6 +4099,7 @@ Response
 }
 ```
 
+<a id="net-set_network_active"></a>
 #### Method `set_network_active`
 * `set_network_active(state)`
     * `state`: `boolean`
@@ -4087,6 +4136,7 @@ Response
 }
 ```
 
+<a id="net-add_node"></a>
 #### Method `add_node`
 * `add_node(peer_id, address)`
     * `peer_id`: `string`
@@ -4151,6 +4201,7 @@ Response
 }
 ```
 
+<a id="net-remove_node"></a>
 #### Method `remove_node`
 * `remove_node(peer_id)`
     * `peer_id`: `string`
@@ -4191,6 +4242,7 @@ Response
 }
 ```
 
+<a id="net-ping_peers"></a>
 #### Method `ping_peers`
 * `ping_peers()`
 
@@ -4222,10 +4274,11 @@ Response
 ```
 
 ### Module `Pool`
-- [👉 OpenRPC spec](http://playground.open-rpc.org/?uiSchema[appBar][ui:title]=CKB-Pool&uiSchema[appBar][ui:splitView]=false&uiSchema[appBar][ui:examplesDropdown]=false&uiSchema[appBar][ui:logoUrl]=https://raw.githubusercontent.com/cryptape/ckb-rpc-resources/main/ckb-logo.jpg&schemaUrl=https://raw.githubusercontent.com/cryptape/ckb-rpc-resources/cb936aa458eaec528378991de5bbe5d51d6ab237/json/pool_rpc_doc.json)
+- [👉 OpenRPC spec](http://playground.open-rpc.org/?uiSchema[appBar][ui:title]=CKB-Pool&uiSchema[appBar][ui:splitView]=false&uiSchema[appBar][ui:examplesDropdown]=false&uiSchema[appBar][ui:logoUrl]=https://raw.githubusercontent.com/cryptape/ckb-rpc-resources/main/ckb-logo.jpg&schemaUrl=https://raw.githubusercontent.com/cryptape/ckb-rpc-resources/5d696307edb59dfa198fb78800ae14588d4bafd8/json/pool_rpc_doc.json)
 
 RPC Module Pool for transaction memory pool.
 
+<a id="pool-send_transaction"></a>
 #### Method `send_transaction`
 * `send_transaction(tx, outputs_validator)`
     * `tx`: [`Transaction`](#type-transaction)
@@ -4318,6 +4371,7 @@ Response
 }
 ```
 
+<a id="pool-remove_transaction"></a>
 #### Method `remove_transaction`
 * `remove_transaction(tx_hash)`
     * `tx_hash`: [`H256`](#type-h256)
@@ -4358,6 +4412,7 @@ Response
 }
 ```
 
+<a id="pool-tx_pool_info"></a>
 #### Method `tx_pool_info`
 * `tx_pool_info()`
 
@@ -4401,6 +4456,7 @@ Response
 }
 ```
 
+<a id="pool-clear_tx_pool"></a>
 #### Method `clear_tx_pool`
 * `clear_tx_pool()`
 
@@ -4431,6 +4487,7 @@ Response
 }
 ```
 
+<a id="pool-get_raw_tx_pool"></a>
 #### Method `get_raw_tx_pool`
 * `get_raw_tx_pool(verbose)`
     * `verbose`: `boolean` `|` `null`
@@ -4478,6 +4535,7 @@ Response
 }
 ```
 
+<a id="pool-get_pool_tx_detail_info"></a>
 #### Method `get_pool_tx_detail_info`
 * `get_pool_tx_detail_info(tx_hash)`
     * `tx_hash`: [`H256`](#type-h256)
@@ -4527,6 +4585,7 @@ Response
 }
 ```
 
+<a id="pool-tx_pool_ready"></a>
 #### Method `tx_pool_ready`
 * `tx_pool_ready()`
 
@@ -4558,10 +4617,11 @@ Response
 ```
 
 ### Module `Rich_indexer`
-- [👉 OpenRPC spec](http://playground.open-rpc.org/?uiSchema[appBar][ui:title]=CKB-Rich_indexer&uiSchema[appBar][ui:splitView]=false&uiSchema[appBar][ui:examplesDropdown]=false&uiSchema[appBar][ui:logoUrl]=https://raw.githubusercontent.com/cryptape/ckb-rpc-resources/main/ckb-logo.jpg&schemaUrl=https://raw.githubusercontent.com/cryptape/ckb-rpc-resources/cb936aa458eaec528378991de5bbe5d51d6ab237/json/rich_indexer_rpc_doc.json)
+- [👉 OpenRPC spec](http://playground.open-rpc.org/?uiSchema[appBar][ui:title]=CKB-Rich_indexer&uiSchema[appBar][ui:splitView]=false&uiSchema[appBar][ui:examplesDropdown]=false&uiSchema[appBar][ui:logoUrl]=https://raw.githubusercontent.com/cryptape/ckb-rpc-resources/main/ckb-logo.jpg&schemaUrl=https://raw.githubusercontent.com/cryptape/ckb-rpc-resources/5d696307edb59dfa198fb78800ae14588d4bafd8/json/rich_indexer_rpc_doc.json)
 
 RPC Module Rich Indexer.
 
+<a id="rich_indexer-get_indexer_tip"></a>
 #### Method `get_indexer_tip`
 * `get_indexer_tip()`
 
@@ -4577,6 +4637,7 @@ Returns the indexed tip
 
 Same as CKB Indexer.
 
+<a id="rich_indexer-get_cells"></a>
 #### Method `get_cells`
 * `get_cells(search_key, order, limit, after)`
     * `search_key`: [`IndexerSearchKey`](#type-indexersearchkey)
@@ -4622,6 +4683,7 @@ If the number of objects is less than the requested `limit`, it indicates that t
 
 Same as CKB Indexer.
 
+<a id="rich_indexer-get_transactions"></a>
 #### Method `get_transactions`
 * `get_transactions(search_key, order, limit, after)`
     * `search_key`: [`IndexerSearchKey`](#type-indexersearchkey)
@@ -4671,6 +4733,7 @@ If the number of objects is less than the requested `limit`, it indicates that t
 
 Same as CKB Indexer.
 
+<a id="rich_indexer-get_cells_capacity"></a>
 #### Method `get_cells_capacity`
 * `get_cells_capacity(search_key)`
     * `search_key`: [`IndexerSearchKey`](#type-indexersearchkey)
@@ -4704,10 +4767,11 @@ Returns the live cells capacity by the lock or type script.
 Same as CKB Indexer.
 
 ### Module `Stats`
-- [👉 OpenRPC spec](http://playground.open-rpc.org/?uiSchema[appBar][ui:title]=CKB-Stats&uiSchema[appBar][ui:splitView]=false&uiSchema[appBar][ui:examplesDropdown]=false&uiSchema[appBar][ui:logoUrl]=https://raw.githubusercontent.com/cryptape/ckb-rpc-resources/main/ckb-logo.jpg&schemaUrl=https://raw.githubusercontent.com/cryptape/ckb-rpc-resources/cb936aa458eaec528378991de5bbe5d51d6ab237/json/stats_rpc_doc.json)
+- [👉 OpenRPC spec](http://playground.open-rpc.org/?uiSchema[appBar][ui:title]=CKB-Stats&uiSchema[appBar][ui:splitView]=false&uiSchema[appBar][ui:examplesDropdown]=false&uiSchema[appBar][ui:logoUrl]=https://raw.githubusercontent.com/cryptape/ckb-rpc-resources/main/ckb-logo.jpg&schemaUrl=https://raw.githubusercontent.com/cryptape/ckb-rpc-resources/5d696307edb59dfa198fb78800ae14588d4bafd8/json/stats_rpc_doc.json)
 
 RPC Module Stats for getting various statistic data.
 
+<a id="stats-get_blockchain_info"></a>
 #### Method `get_blockchain_info`
 * `get_blockchain_info()`
 
@@ -4752,6 +4816,7 @@ Response
 }
 ```
 
+<a id="stats-get_deployments_info"></a>
 #### Method `get_deployments_info`
 * `get_deployments_info()`
 

@@ -72,7 +72,7 @@ impl IntoCapacity for u8 {
 }
 
 // A `Byte` contains how many `Shannons`.
-const BYTE_SHANNONS: u64 = 100_000_000;
+const BYTE_SHANNONS: u64 = 1;
 
 /// Numeric errors.
 #[derive(Debug, Clone, PartialEq, Eq)]

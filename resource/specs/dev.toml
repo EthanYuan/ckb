@@ -85,9 +85,10 @@ lock.hash_type = "type"
 
 [params]
 max_block_cycles = 10_000_000_000
-cellbase_maturity = 0
-epoch_duration_target = 8
-genesis_epoch_length = 1
+cellbase_maturity = 1
+# the epoch length will be calculated as `epoch_duration_target / 8`
+epoch_duration_target = 768
+genesis_epoch_length = 96
 
 [params.hardfork]
 ckb2023 = 0

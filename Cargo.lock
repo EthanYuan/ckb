@@ -369,6 +369,20 @@ dependencies = [
 ]
 
 [[package]]
+name = "block-producer"
+version = "0.1.0"
+dependencies = [
+ "ckb-async-runtime",
+ "ckb-chain",
+ "ckb-error",
+ "ckb-logger",
+ "ckb-network",
+ "ckb-shared",
+ "ckb-stop-handler",
+ "ckb-types",
+]
+
+[[package]]
 name = "bloom-filters"
 version = "0.1.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -998,6 +1012,7 @@ dependencies = [
 name = "ckb-launcher"
 version = "0.116.1"
 dependencies = [
+ "block-producer",
  "ckb-app-config",
  "ckb-async-runtime",
  "ckb-block-filter",

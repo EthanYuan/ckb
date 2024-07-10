@@ -32,6 +32,7 @@ ckb-channel = { path = "../channel", version = "= 0.116.1" }
 ckb-tx-pool = { path = "../../tx-pool", version = "= 0.116.1" }
 ckb-light-client-protocol-server = { path = "../light-client-protocol-server", version = "= 0.116.1" }
 ckb-block-filter = { path = "../../block-filter", version = "= 0.116.1" }
+block-producer = { path = "../../block-producer", version = "= 0.1.0" }
 
 
 [features]

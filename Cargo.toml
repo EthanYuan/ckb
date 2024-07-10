@@ -93,7 +93,8 @@ members = [
   "util/light-client-protocol-server",
   "util/launcher",
   "devtools/doc/rpc-gen",
-  "ckb-bin"
+  "ckb-bin",
+  "block-producer"
 ]
 
 [workspace.dependencies]

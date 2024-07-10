@@ -5,7 +5,7 @@
 use ckb_app_config::{
     BlockAssemblerConfig, ExitCode, RpcConfig, RpcModule, RunArgs, SupportProtocol,
 };
-use ckb_async_runtime::Handle;
+use ckb_async_runtime::{tokio::time::Duration, Handle};
 use ckb_block_filter::filter::BlockFilter as BlockFilterService;
 use ckb_build_info::Version;
 use ckb_chain::chain::{ChainController, ChainService};
@@ -22,15 +22,17 @@ use ckb_proposal_table::ProposalTable;
 use ckb_resource::Resource;
 use ckb_rpc::RpcServer;
 use ckb_rpc::ServiceBuilder;
-use ckb_shared::Shared;
-
 use ckb_shared::shared_builder::{SharedBuilder, SharedPackage};
+use ckb_shared::Shared;
 use ckb_store::{ChainDB, ChainStore};
 use ckb_sync::{BlockFilter, NetTimeProtocol, Relayer, SyncShared, Synchronizer};
 use ckb_tx_pool::service::TxVerificationResult;
 use ckb_types::prelude::*;
 use ckb_verification::GenesisVerifier;
 use ckb_verification_traits::Verifier;
+
+use block_producer::BlockProducer;
+
 use std::sync::Arc;
 
 const SECP256K1_BLAKE160_SIGHASH_ALL_ARG_LEN: usize = 20;
@@ -390,6 +392,14 @@ impl Launcher {
         )
         .start(shared.async_handle())
         .expect("Start network service failed");
+
+        let block_producer = BlockProducer::new(
+            network_controller.clone(),
+            shared.clone(),
+            chain_controller.clone(),
+            Duration::from_secs(2),
+        );
+        block_producer.produce_blocks_on_schedule();
 
         let rpc_config = self.adjust_rpc_config();
         let mut builder = ServiceBuilder::new(&rpc_config)

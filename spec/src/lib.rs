@@ -78,6 +78,7 @@ pub struct ChainSpec {
     #[serde(default)]
     pub params: Params,
     /// The block chain pow
+    #[serde(default)]
     pub pow: Pow,
     #[serde(skip)]
     /// Hash of blake2b_256 spec content bytes, used for check consistency between database and config
@@ -161,7 +162,7 @@ pub mod default_params {
     ///
     /// Apply to [`permanent_difficulty_in_dummy`](../consensus/struct.Consensus.html#structfield.permanent_difficulty_in_dummy)
     pub fn permanent_difficulty_in_dummy() -> bool {
-        false
+        true
     }
 
     /// The default orphan_rate_target
@@ -555,7 +556,7 @@ impl ChainSpec {
     pub fn build_consensus(&self) -> Result<Consensus, Box<dyn Error>> {
         let hardfork_switch = self.build_hardfork_switch()?;
         let genesis_epoch_ext = build_genesis_epoch_ext(
-            self.params.initial_primary_epoch_reward(),
+            default_params::initial_primary_epoch_reward(),
             self.genesis.compact_target,
             self.params.genesis_epoch_length(),
             self.params.epoch_duration_target(),
@@ -569,23 +570,13 @@ impl ChainSpec {
             .cellbase_maturity(EpochNumberWithFraction::from_full_value(
                 self.params.cellbase_maturity(),
             ))
-            .secondary_epoch_reward(self.params.secondary_epoch_reward())
             .max_block_cycles(self.params.max_block_cycles())
             .max_block_bytes(self.params.max_block_bytes())
-            .pow(self.pow.clone())
             .satoshi_pubkey_hash(self.genesis.satoshi_gift.satoshi_pubkey_hash.clone())
             .satoshi_cell_occupied_ratio(self.genesis.satoshi_gift.satoshi_cell_occupied_ratio)
-            .primary_epoch_reward_halving_interval(
-                self.params.primary_epoch_reward_halving_interval(),
-            )
-            .initial_primary_epoch_reward(self.params.initial_primary_epoch_reward())
             .epoch_duration_target(self.params.epoch_duration_target())
-            .permanent_difficulty_in_dummy(self.params.permanent_difficulty_in_dummy())
             .max_block_proposals_limit(self.params.max_block_proposals_limit())
             .orphan_rate_target(self.params.orphan_rate_target())
-            .starting_block_limiting_dao_withdrawing_lock(
-                self.params.starting_block_limiting_dao_withdrawing_lock(),
-            )
             .hardfork_switch(hardfork_switch);
 
         if let Some(deployments) = self.softfork_deployments() {

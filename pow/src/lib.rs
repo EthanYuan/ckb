@@ -21,10 +21,11 @@ pub use crate::eaglesong::EaglesongPowEngine;
 pub use crate::eaglesong_blake2b::EaglesongBlake2bPowEngine;
 
 /// The PoW engine traits bundled
-#[derive(Clone, Serialize, Deserialize, Eq, PartialEq, Hash, Debug)]
+#[derive(Default, Clone, Serialize, Deserialize, Eq, PartialEq, Hash, Debug)]
 #[serde(tag = "func", content = "params")]
 pub enum Pow {
     /// Mocking dummy PoW engine
+    #[default]
     Dummy,
     /// The Eaglesong PoW engine
     /// Check details of Eaglesong from: <https://github.com/nervosnetwork/rfcs/blob/master/rfcs/0010-eaglesong/0010-eaglesong.md>

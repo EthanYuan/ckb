@@ -41,11 +41,11 @@ use std::collections::HashMap;
 use std::sync::Arc;
 
 // 1.344 billion per year
-pub(crate) const DEFAULT_SECONDARY_EPOCH_REWARD: Capacity = Capacity::shannons(613_698_63013698);
+pub(crate) const DEFAULT_SECONDARY_EPOCH_REWARD: Capacity = Capacity::shannons(0);
 // 4.2 billion per year
-pub(crate) const INITIAL_PRIMARY_EPOCH_REWARD: Capacity = Capacity::shannons(1_917_808_21917808);
+pub(crate) const INITIAL_PRIMARY_EPOCH_REWARD: Capacity = Capacity::shannons(0);
 const MAX_UNCLE_NUM: usize = 2;
-pub(crate) const TX_PROPOSAL_WINDOW: ProposalWindow = ProposalWindow(2, 10);
+pub(crate) const TX_PROPOSAL_WINDOW: ProposalWindow = ProposalWindow(1, 1);
 // Cellbase outputs are "locked" and require 4 epoch confirmations (approximately 16 hours) before
 // they mature sufficiently to be spendable,
 // This is to reduce the risk of later txs being reversed if a chain reorganization occurs.
@@ -87,7 +87,7 @@ pub(crate) const MAX_BLOCK_CYCLES: u64 = TWO_IN_TWO_OUT_CYCLES * TWO_IN_TWO_OUT_
 ///
 /// Default value from 1.5 * TWO_IN_TWO_OUT_COUNT
 pub const MAX_BLOCK_PROPOSALS_LIMIT: u64 = 1_500;
-const PROPOSER_REWARD_RATIO: Ratio = Ratio::new(4, 10);
+const PROPOSER_REWARD_RATIO: Ratio = Ratio::new(0, 10);
 
 // Satoshi's pubkey hash in Bitcoin genesis.
 pub(crate) const SATOSHI_PUBKEY_HASH: H160 = h160!("0x62e907b15cbf27d5425399ebf6f0fb50ebb88f18");
@@ -102,7 +102,7 @@ pub const TESTNET_ACTIVATION_THRESHOLD: Ratio = Ratio::new(3, 4);
 
 /// The starting block number from which the lock script size of a DAO withdrawing
 /// cell shall be limited
-pub(crate) const STARTING_BLOCK_LIMITING_DAO_WITHDRAWING_LOCK: u64 = 10_000_000;
+pub(crate) const STARTING_BLOCK_LIMITING_DAO_WITHDRAWING_LOCK: u64 = 0;
 
 /// The struct represent CKB two-step-transaction-confirmation params
 ///
@@ -294,7 +294,7 @@ impl ConsensusBuilder {
                 satoshi_cell_occupied_ratio: SATOSHI_CELL_OCCUPIED_RATIO,
                 primary_epoch_reward_halving_interval:
                     DEFAULT_PRIMARY_EPOCH_REWARD_HALVING_INTERVAL,
-                permanent_difficulty_in_dummy: false,
+                permanent_difficulty_in_dummy: true,
                 hardfork_switch: HardForks::new_mirana(),
                 deployments: HashMap::new(),
                 versionbits_caches: VersionbitsCache::default(),
@@ -332,11 +332,6 @@ impl ConsensusBuilder {
                     .witnesses()
                     .is_empty(),
             "genesis block must contain the witness for cellbase"
-        );
-
-        debug_assert!(
-            self.inner.initial_primary_epoch_reward != Capacity::zero(),
-            "initial_primary_epoch_reward must be non-zero"
         );
 
         debug_assert!(
@@ -610,7 +605,7 @@ impl Consensus {
 
     /// The two-step-transaction-confirmation block reward delay length
     pub fn finalization_delay_length(&self) -> BlockNumber {
-        self.tx_proposal_window.farthest() + 1
+        self.tx_proposal_window.farthest()
     }
 
     /// Get block reward finalize number from specified block number

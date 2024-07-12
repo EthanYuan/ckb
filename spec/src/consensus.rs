@@ -40,9 +40,7 @@ use std::cmp;
 use std::collections::HashMap;
 use std::sync::Arc;
 
-// 1.344 billion per year
 pub(crate) const DEFAULT_SECONDARY_EPOCH_REWARD: Capacity = Capacity::shannons(0);
-// 4.2 billion per year
 pub(crate) const INITIAL_PRIMARY_EPOCH_REWARD: Capacity = Capacity::shannons(0);
 const MAX_UNCLE_NUM: usize = 2;
 pub(crate) const TX_PROPOSAL_WINDOW: ProposalWindow = ProposalWindow(1, 1);

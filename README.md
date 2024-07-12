@@ -1,11 +1,12 @@
 # Branch Chain
 
-A branch chain is a BTC Layer-2 chain that actually runs smart contracts. It is characterized by high TPS (Transactions Per Second), low fees, fewer block-producing nodes, and a challenge-based security model. 
+A Branch Chain is a BTC Layer-2 chain that actually runs smart contracts. It is characterized by high TPS (Transactions Per Second), low fees, fewer block-producing nodes, and a challenge-based security model. 
 
 For more information, see the [branch chain](https://github.com/ckb-cell/utxo-stack-doc/blob/master/docs/branch-chain.md).
 
 ## Features
 
+- Compatible with RGB++ layer smart contracts
 - BTC as cell capacity token, 1 satoshi can be used for 1 byte of on-chain space
 - Single sequencer
 - Blocks produced every 2 seconds
@@ -56,7 +57,9 @@ hash_type = "type"
 message = "0x"
 ```
 
-The `args` value in the `block_assembler` configuration is directly taken from the `args` specified in the `lock script` of a pre-defined cell in the genesis configuration (`[genesis.issued_cells]`). This allows for a simplified setup, as you can reuse the existing parameters from the development chain's specification.
+The `args` value in the `block_assembler` configuration is directly taken from the `args` specified in the `lock script` of a pre-defined cell in the genesis configuration (`[genesis.issued_cells]`). 
+
+In the genesis block, there are two `issued_cells` with sufficient capacity representing BTC. For more details, see the [genesis configuration](/resource/specs/dev.toml).
 
 **Please NOTE that this setup is intended for testing purposes only and should not be used in a production environment.**
 

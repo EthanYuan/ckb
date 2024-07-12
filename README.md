@@ -63,7 +63,7 @@ The `args` value in the `block_assembler` configuration is directly taken from t
 ### Start Node with Indexer
 
 ```shell
-ckb run -C <path> --indexer
+ckb run --indexer
 ```
 Restarting in the same directory will reuse the data.
 
@@ -75,6 +75,8 @@ Find RPC port in the log output, the following command assumes 8114 is used:
 curl -d '{"id": 1, "jsonrpc": "2.0", "method":"get_tip_header","params": []}' \
   -H 'content-type:application/json' 'http://localhost:8114'
 ```
+
+For more RPC commands, please refer to the [RPC documentation](rpc/README.md).
 
 ---
 

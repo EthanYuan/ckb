@@ -1,73 +1,83 @@
-# [Nervos CKB](https://www.nervos.org/) - The Common Knowledge Base
+# Branch Chain
 
-[![Version](https://img.shields.io/badge/version-0.116.1-orange.svg)](https://github.com/nervosnetwork/ckb/releases)
-[![Nervos Talk](https://img.shields.io/badge/discuss-on%20Nervos%20Talk-3CC68A.svg)](https://talk.nervos.org/t/where-to-discuss-ckb-and-how-to-ask-for-support/6024)
+A branch chain is a BTC Layer-2 chain that actually runs smart contracts. It is characterized by high TPS (Transactions Per Second), low fees, fewer block-producing nodes, and a challenge-based security model. 
 
-master | develop
--------|----------
-[![Unit Tests](https://github.com/nervosnetwork/ckb/actions/workflows/ci_unit_tests_ubuntu.yaml/badge.svg?branch=master)](https://github.com/nervosnetwork/ckb/actions/workflows/ci_unit_tests_ubuntu.yaml?query=branch%3Amaster) | [![Unit Tests](https://github.com/nervosnetwork/ckb/actions/workflows/ci_unit_tests_ubuntu.yaml/badge.svg?branch=develop)](https://github.com/nervosnetwork/ckb/actions/workflows/ci_unit_tests_ubuntu.yaml?query=branch%3Adevelop)
-[![Integration Tests](https://github.com/nervosnetwork/ckb/actions/workflows/ci_integration_tests_ubuntu.yaml/badge.svg?branch=master)](https://github.com/nervosnetwork/ckb/actions/workflows/ci_integration_tests_ubuntu.yaml?query=branch%3Amaster) | [![Integration Tests](https://github.com/nervosnetwork/ckb/actions/workflows/ci_integration_tests_ubuntu.yaml/badge.svg?branch=develop)](https://github.com/nervosnetwork/ckb/actions/workflows/ci_integration_tests_ubuntu.yaml?query=branch%3Adevelop)
+For more information, see the [branch chain](https://github.com/ckb-cell/utxo-stack-doc/blob/master/docs/branch-chain.md).
+
+## Features
+
+- BTC as cell capacity token, 1 satoshi can be used for 1 byte of on-chain space
+- Single sequencer
+- Blocks produced every 2 seconds
 
 ---
 
-## About CKB
+## Quick Start
 
-CKB is a public and permissionless layer-1 blockchain. CKB uses [Proof of Work](https://en.wikipedia.org/wiki/Proof-of-work_system) and [improved Nakamoto consensus](https://medium.com/nervosnetwork/breaking-the-throughput-limit-of-nakamoto-consensus-ccdf65fe0832) to achieve maximized performance on average hardware and network bandwidth, without sacrificing layer-1's core values - decentralization and security.
+### Build from Source
 
-CKB supports scripting in any programming language with its own [CKB-VM](https://github.com/nervosnetwork/ckb-vm/), a virtual machine fully compatible with RISC-V ISA.
-CKB is a [Universal Verification Layer](https://medium.com/nervosnetwork/https-medium-com-nervosnetwork-cell-model-7323fca57571) which focuses on verification, leaves computation to layer 2 (and higher) applications/protocols.
+Source code:
 
-[CKB](https://github.com/nervosnetwork/rfcs/blob/master/rfcs/0002-ckb/0002-ckb.md) is a part of [Nervos Network](https://www.nervos.org), which defines [a suite of scalable and interoperable blockchain protocols](https://github.com/nervosnetwork/rfcs) to create a self-evolving distributed economy.
+```shell
+# get ckb source code
+git clone https://github.com/EthanYuan/ckb.git
+cd ckb
+git checkout v0.116.1-branch-chain
+```
 
-Support for different platforms are organized into [three tiers](docs/platform-support.md), each with a different set of guarantees.
+Build:
 
-**Notice**: The ckb process will send stack trace to sentry on Rust panics. This is enabled by default before the mainnet launch, which can be opted out by setting
-the option `dsn` to empty in the config file.
+```shell
+make prod
+```
 
+For reference, see the [build from source](https://docs-old.nervos.org/docs/basics/guides/get-ckb#build-from-source)
 
-## License [![FOSSA Status](https://app.fossa.io/api/projects/git%2Bgithub.com%2Fnervosnetwork%2Fckb.svg?type=shield)](https://app.fossa.io/projects/git%2Bgithub.com%2Fnervosnetwork%2Fckb?ref=badge_shield)
+### Init
 
-Nervos CKB is released under the terms of the MIT license. See [COPYING](COPYING) for more information or see [https://opensource.org/licenses/MIT](https://opensource.org/licenses/MIT).
+```shell
+mkdir branch-dev
+cd branch-dev
+```
 
+```shell
+ckb init --chain dev --genesis-message branch-dev
+```
 
-## Join a Network
+### Configure 
 
-- Mainnet Mirana: Use the [latest release](https://github.com/nervosnetwork/ckb/releases/latest) and run `ckb init --chain mainnet` to initialize the node.
-    - Mirana is active since the epoch 5414, see the [migration guide](https://github.com/jordanmack/nervos-ckb2021-hard-fork-migration-guide) to upgrade from Lina.
-- Testnet Pudge: Use the [latest release](https://github.com/nervosnetwork/ckb/releases/latest) and run `ckb init --chain testnet` to initialize the node.
-    - Pudge is active since the epoch 3113.
+The following settings are used to configure the `block_assembler` in the `ckb.toml` file:
 
+```toml
+[block_assembler]
+code_hash = "0x9bd7e06f3ecf4be0f2fcd2188b23f1b9fcc88e5d4b65a8637b17723bbda3cce8"
+args = "0x470dcdc5e44064909650113a274b3b36aecb6dc7"
+hash_type = "type"
+message = "0x"
+```
 
-## Mining
+The `args` value in the `block_assembler` configuration is directly taken from the `args` specified in the `lock script` of a pre-defined cell in the genesis configuration (`[genesis.issued_cells]`). This allows for a simplified setup, as you can reuse the existing parameters from the development chain's specification.
 
-CKB uses the [Eaglesong](https://github.com/nervosnetwork/rfcs/blob/master/rfcs/0010-eaglesong/0010-eaglesong.md) mining algorithm.
+**Please NOTE that this setup is intended for testing purposes only and should not be used in a production environment.**
 
+### Start Node with Indexer
 
-## Development Process
+```shell
+ckb run -C <path> --indexer
+```
+Restarting in the same directory will reuse the data.
 
-The `master` branch is regularly built and tested. It is considered already production ready; The `develop` branch is the work branch to merge new features, and it's not stable. The CHANGELOG is available in [Releases](https://github.com/nervosnetwork/ckb/releases) and [CHANGELOG.md](https://github.com/nervosnetwork/ckb/blob/master/CHANGELOG.md) in the `master` branch.
+## Use RPC
 
+Find RPC port in the log output, the following command assumes 8114 is used:
 
-## How to Contribute
-
-The contribution workflow is described in [CONTRIBUTING.md](CONTRIBUTING.md), and security policy is described in [SECURITY.md](SECURITY.md). To propose new protocol or standard for Nervos, see [Nervos RFC](https://github.com/nervosnetwork/rfcs).
+```shell
+curl -d '{"id": 1, "jsonrpc": "2.0", "method":"get_tip_header","params": []}' \
+  -H 'content-type:application/json' 'http://localhost:8114'
+```
 
 ---
 
 ## Documentations
 
-[Latest version](https://github.com/nervosnetwork/ckb#documentations) is hosted in GitHub.
-
-The default branch in GitHub is `develop`, if you are looking for docs for the
-Mainnet Mirana or Testnet Pudge, switch to the branch [master].
-
-[master]: https://github.com/nervosnetwork/ckb/tree/master#documentations
-
-- [Quick Start](docs/quick-start.md)
-- [Configure CKB](docs/configure.md)
-- [Platform Support](docs/platform-support.md)
-- [How to Download or Build CKB Binary](https://docs.nervos.org/docs/basics/guides/get-ckb)
-- [How to Download or Build CKB Binary on Windows](https://docs.nervos.org/docs/basics/guides/ckb-on-windows)
-- [How to test miner on dev chain](docs/dev-miner.md)
-
-You can find a more comprehensive document website at [https://docs.nervos.org](https://docs.nervos.org).
+- [RGBPP Layer](rgbpp-layer.md)

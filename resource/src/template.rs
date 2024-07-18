@@ -1,7 +1,7 @@
 /// Default chain spec.
-pub const DEFAULT_SPEC: &str = "mainnet";
+pub const DEFAULT_SPEC: &str = "dev";
 /// The list of bundled chain specs.
-pub const AVAILABLE_SPECS: &[&str] = &["mainnet", "testnet", "staging", "dev"];
+pub const AVAILABLE_SPECS: &[&str] = &["dev"];
 /// The default RPC listen port *8114*.
 pub const DEFAULT_RPC_PORT: &str = "8114";
 /// The default P2P listen port *8115*.

@@ -149,7 +149,7 @@ where
                 Arc::clone(&consensus),
                 Arc::clone(&tx_env),
             ),
-            capacity: CapacityVerifier::new(Arc::clone(&rtx), consensus.dao_type_hash()),
+            capacity: CapacityVerifier::new(Arc::clone(&rtx)),
             fee_calculator: FeeCalculator::new(rtx, consensus, data_loader),
         }
     }
@@ -453,15 +453,13 @@ impl<'a> DuplicateDepsVerifier<'a> {
 /// Perform inputs and outputs `capacity` field related verification
 pub struct CapacityVerifier {
     resolved_transaction: Arc<ResolvedTransaction>,
-    dao_type_hash: Byte32,
 }
 
 impl CapacityVerifier {
     /// Create a new `CapacityVerifier`
-    pub fn new(resolved_transaction: Arc<ResolvedTransaction>, dao_type_hash: Byte32) -> Self {
+    pub fn new(resolved_transaction: Arc<ResolvedTransaction>) -> Self {
         CapacityVerifier {
             resolved_transaction,
-            dao_type_hash,
         }
     }
 
@@ -472,7 +470,7 @@ impl CapacityVerifier {
         // withdraw transactions.
         // cellbase's outputs are verified by RewardVerifier
         // DAO withdraw transaction is verified via the type script of DAO cells
-        if !(self.resolved_transaction.is_cellbase() || self.valid_dao_withdraw_transaction()) {
+        if !(self.resolved_transaction.is_cellbase()) {
             let inputs_sum = self.resolved_transaction.inputs_capacity()?;
             let outputs_sum = self.resolved_transaction.outputs_capacity()?;
 
@@ -504,13 +502,6 @@ impl CapacityVerifier {
         }
 
         Ok(())
-    }
-
-    fn valid_dao_withdraw_transaction(&self) -> bool {
-        self.resolved_transaction
-            .resolved_inputs
-            .iter()
-            .any(|cell_meta| cell_uses_dao_type_script(&cell_meta.cell_output, &self.dao_type_hash))
     }
 }
 
@@ -874,7 +865,7 @@ where
                 data_loader.clone(),
                 tx_env,
             ),
-            capacity: CapacityVerifier::new(Arc::clone(&rtx), consensus.dao_type_hash()),
+            capacity: CapacityVerifier::new(Arc::clone(&rtx)),
             fee_calculator: FeeCalculator::new(rtx, consensus, data_loader),
         }
     }

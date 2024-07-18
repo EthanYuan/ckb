@@ -9,8 +9,7 @@ use crate::{
         self, Deployment, DeploymentPos, ThresholdState, Versionbits, VersionbitsCache,
         VersionbitsConditionChecker, VersionbitsIndexer,
     },
-    OUTPUT_INDEX_DAO, OUTPUT_INDEX_SECP256K1_BLAKE160_MULTISIG_ALL,
-    OUTPUT_INDEX_SECP256K1_BLAKE160_SIGHASH_ALL,
+    OUTPUT_INDEX_SECP256K1_BLAKE160_MULTISIG_ALL, OUTPUT_INDEX_SECP256K1_BLAKE160_SIGHASH_ALL,
 };
 use ckb_constant::{
     consensus::TAU,
@@ -345,7 +344,7 @@ impl ConsensusBuilder {
             "genesis block must contain the witness for cellbase"
         );
 
-        self.inner.dao_type_hash = self.get_type_hash(OUTPUT_INDEX_DAO).unwrap_or_default();
+        self.inner.dao_type_hash = Byte32::default();
         self.inner.secp256k1_blake160_sighash_all_type_hash =
             self.get_type_hash(OUTPUT_INDEX_SECP256K1_BLAKE160_SIGHASH_ALL);
         self.inner.secp256k1_blake160_multisig_all_type_hash =

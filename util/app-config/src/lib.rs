@@ -31,9 +31,6 @@ use ckb_types::{u256, H256, U256};
 use clap::ArgMatches;
 use std::{path::PathBuf, str::FromStr};
 
-// 500_000 total difficulty
-const MIN_CHAIN_WORK_500K: U256 = u256!("0x3314412053c82802a7");
-
 /// A struct including all the information to start the ckb process.
 pub struct Setup {
     /// Subcommand name.
@@ -73,19 +70,7 @@ impl Setup {
         let consensus = self.consensus()?;
         let chain_spec_hash = self.chain_spec()?.hash;
         let mut config = self.config.into_ckb()?;
-
-        let mainnet_genesis = ckb_chain_spec::ChainSpec::load_from(
-            &ckb_resource::Resource::bundled("specs/mainnet.toml".to_string()),
-        )
-        .expect("load mainnet spec fail")
-        .build_genesis()
-        .expect("build mainnet genesis fail");
-        config.network.sync.min_chain_work =
-            if consensus.genesis_block.hash() == mainnet_genesis.hash() {
-                MIN_CHAIN_WORK_500K
-            } else {
-                u256!("0x0")
-            };
+        config.network.sync.min_chain_work = u256!("0x0");
 
         let arg_assume_valid_target = matches.get_one::<String>(cli::ARG_ASSUME_VALID_TARGET);
 

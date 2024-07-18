@@ -22,8 +22,8 @@ use ckb_hash::{blake2b_256, new_blake2b};
 use ckb_jsonrpc_types::Script;
 use ckb_pow::{Pow, PowEngine};
 use ckb_resource::{
-    Resource, CODE_HASH_DAO, CODE_HASH_SECP256K1_BLAKE160_MULTISIG_ALL,
-    CODE_HASH_SECP256K1_BLAKE160_SIGHASH_ALL, CODE_HASH_SECP256K1_DATA,
+    Resource, CODE_HASH_SECP256K1_BLAKE160_MULTISIG_ALL, CODE_HASH_SECP256K1_BLAKE160_SIGHASH_ALL,
+    CODE_HASH_SECP256K1_DATA,
 };
 use ckb_types::{
     bytes::Bytes,
@@ -59,12 +59,10 @@ const SPECIAL_CELL_PRIVKEY: H256 =
 
 /// The output index of SECP256K1/blake160 script in the genesis no.0 transaction
 pub const OUTPUT_INDEX_SECP256K1_BLAKE160_SIGHASH_ALL: u64 = 1;
-/// The output index of DAO script in the genesis no.0 transaction
-pub const OUTPUT_INDEX_DAO: u64 = 2;
 /// The output data index of SECP256K1 in the genesis no.0 transaction
-pub const OUTPUT_INDEX_SECP256K1_DATA: u64 = 3;
+pub const OUTPUT_INDEX_SECP256K1_DATA: u64 = 2;
 /// The output index of SECP256K1/multisig script in the genesis no.0 transaction
-pub const OUTPUT_INDEX_SECP256K1_BLAKE160_MULTISIG_ALL: u64 = 4;
+pub const OUTPUT_INDEX_SECP256K1_BLAKE160_MULTISIG_ALL: u64 = 3;
 
 /// The CKB block chain specification
 #[derive(Clone, PartialEq, Eq, Debug, Serialize, Deserialize)]
@@ -737,7 +735,6 @@ impl ChainSpec {
             OUTPUT_INDEX_SECP256K1_BLAKE160_SIGHASH_ALL as usize,
             &CODE_HASH_SECP256K1_BLAKE160_SIGHASH_ALL,
         )?;
-        check_cells_data_hash(0, OUTPUT_INDEX_DAO as usize, &CODE_HASH_DAO)?;
         check_cells_data_hash(
             0,
             OUTPUT_INDEX_SECP256K1_DATA as usize,

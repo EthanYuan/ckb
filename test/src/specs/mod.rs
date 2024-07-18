@@ -1,6 +1,5 @@
 mod alert;
 mod consensus;
-mod dao;
 mod hardfork;
 mod mining;
 mod p2p;
@@ -11,7 +10,6 @@ mod tx_pool;
 
 pub use alert::*;
 pub use consensus::*;
-pub use dao::*;
 pub use hardfork::*;
 pub use mining::*;
 pub use p2p::*;

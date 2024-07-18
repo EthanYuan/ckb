@@ -1,14 +1,10 @@
 use super::super::transaction_verifier::{
-    CapacityVerifier, DaoScriptSizeVerifier, DuplicateDepsVerifier, EmptyVerifier,
-    MaturityVerifier, OutputsDataVerifier, Since, SinceVerifier, SizeVerifier, VersionVerifier,
+    CapacityVerifier, DuplicateDepsVerifier, EmptyVerifier, MaturityVerifier, OutputsDataVerifier,
+    Since, SinceVerifier, SizeVerifier, VersionVerifier,
 };
 use crate::error::TransactionErrorSource;
 use crate::{TransactionError, TxVerifyEnv};
-use ckb_chain_spec::{
-    build_genesis_type_id_script,
-    consensus::{Consensus, ConsensusBuilder},
-    OUTPUT_INDEX_DAO,
-};
+use ckb_chain_spec::consensus::ConsensusBuilder;
 use ckb_error::{assert_error_eq, Error};
 use ckb_test_chain_utils::{MockMedianTime, MOCK_MEDIAN_TIME_COUNT};
 use ckb_traits::CellDataProvider;
@@ -19,11 +15,11 @@ use ckb_types::{
         capacity_bytes,
         cell::{CellMetaBuilder, ResolvedTransaction},
         hardfork::HardForks,
-        BlockNumber, Capacity, EpochNumber, EpochNumberWithFraction, HeaderView, ScriptHashType,
+        BlockNumber, Capacity, EpochNumber, EpochNumberWithFraction, HeaderView,
         TransactionBuilder, TransactionInfo, TransactionView,
     },
     h256,
-    packed::{Byte32, CellDep, CellInput, CellOutput, OutPoint, Script},
+    packed::{Byte32, CellDep, CellInput, CellOutput, OutPoint},
     prelude::*,
 };
 use std::sync::Arc;
@@ -103,8 +99,7 @@ pub fn test_capacity_outofbound() {
         .build()],
         resolved_dep_groups: vec![],
     });
-    let dao_type_hash = build_genesis_type_id_script(OUTPUT_INDEX_DAO).calc_script_hash();
-    let verifier = CapacityVerifier::new(rtx, dao_type_hash);
+    let verifier = CapacityVerifier::new(rtx);
 
     assert_error_eq!(
         verifier.verify().unwrap_err(),
@@ -115,30 +110,6 @@ pub fn test_capacity_outofbound() {
             occupied_capacity: capacity_bytes!(92),
         }
     );
-}
-
-#[test]
-pub fn test_skip_dao_capacity_check() {
-    let dao_type_script = build_genesis_type_id_script(OUTPUT_INDEX_DAO);
-    let transaction = TransactionBuilder::default()
-        .output(
-            CellOutput::new_builder()
-                .capacity(capacity_bytes!(500).pack())
-                .type_(Some(dao_type_script.clone()).pack())
-                .build(),
-        )
-        .output_data(Bytes::new().pack())
-        .build();
-
-    let rtx = Arc::new(ResolvedTransaction {
-        transaction,
-        resolved_cell_deps: Vec::new(),
-        resolved_inputs: vec![],
-        resolved_dep_groups: vec![],
-    });
-    let verifier = CapacityVerifier::new(rtx, dao_type_script.calc_script_hash());
-
-    assert!(verifier.verify().is_ok());
 }
 
 // inputs immature verify
@@ -328,8 +299,7 @@ pub fn test_capacity_invalid() {
         ],
         resolved_dep_groups: vec![],
     });
-    let dao_type_hash = build_genesis_type_id_script(OUTPUT_INDEX_DAO).calc_script_hash();
-    let verifier = CapacityVerifier::new(rtx, dao_type_hash);
+    let verifier = CapacityVerifier::new(rtx);
 
     assert_error_eq!(
         verifier.verify().unwrap_err(),
@@ -795,325 +765,4 @@ impl CellDataProvider for EmptyDataProvider {
     fn get_cell_data_hash(&self, _out_point: &OutPoint) -> Option<Byte32> {
         None
     }
-}
-
-fn build_consensus_with_dao_limiting_block(block_number: u64) -> (Arc<Consensus>, Script) {
-    let dao_script = build_genesis_type_id_script(OUTPUT_INDEX_DAO);
-    let mut consensus = ConsensusBuilder::default()
-        .starting_block_limiting_dao_withdrawing_lock(block_number)
-        .build();
-
-    // Default consensus built this way only has one dummy output in the
-    // cellbase transaction from genesis block, meaning it will be missing
-    // the dao script. For simplicity, we are hacking consensus here with
-    // a dao_type_hash value, a proper way should be creating a proper genesis
-    // block here, but we will leave it till we really need it.
-    consensus.dao_type_hash = dao_script.calc_script_hash();
-
-    let dao_type_script = Script::new_builder()
-        .code_hash(dao_script.calc_script_hash())
-        .hash_type(ScriptHashType::Type.into())
-        .build();
-
-    (Arc::new(consensus), dao_type_script)
-}
-
-#[test]
-fn test_dao_disables_different_lock_script_size() {
-    let (consensus, dao_type_script) = build_consensus_with_dao_limiting_block(20000);
-
-    let transaction = TransactionBuilder::default()
-        .outputs(vec![
-            CellOutput::new_builder()
-                .capacity(capacity_bytes!(50).pack())
-                .build(),
-            CellOutput::new_builder()
-                .capacity(capacity_bytes!(200).pack())
-                .lock(
-                    Script::new_builder()
-                        .args(Bytes::from(vec![1; 20]).pack())
-                        .build(),
-                )
-                .type_(Some(dao_type_script.clone()).pack())
-                .build(),
-        ])
-        .outputs_data(vec![Bytes::new().pack(); 2])
-        .build();
-
-    let rtx = Arc::new(ResolvedTransaction {
-        transaction,
-        resolved_cell_deps: Vec::new(),
-        resolved_inputs: vec![
-            CellMetaBuilder::from_cell_output(
-                CellOutput::new_builder()
-                    .capacity(capacity_bytes!(50).pack())
-                    .build(),
-                Bytes::new(),
-            )
-            .transaction_info(mock_transaction_info(
-                20010,
-                EpochNumberWithFraction::new(10, 0, 10),
-                0,
-            ))
-            .build(),
-            CellMetaBuilder::from_cell_output(
-                CellOutput::new_builder()
-                    .capacity(capacity_bytes!(201).pack())
-                    .lock(Script::new_builder().args(Bytes::new().pack()).build())
-                    .type_(Some(dao_type_script).pack())
-                    .build(),
-                Bytes::from(vec![0; 8]),
-            )
-            .transaction_info(mock_transaction_info(
-                20011,
-                EpochNumberWithFraction::new(10, 0, 10),
-                0,
-            ))
-            .build(),
-        ],
-        resolved_dep_groups: vec![],
-    });
-    let verifier = DaoScriptSizeVerifier::new(rtx, consensus, EmptyDataProvider {});
-
-    assert_error_eq!(
-        verifier.verify().unwrap_err(),
-        TransactionError::DaoLockSizeMismatch { index: 1 },
-    );
-}
-
-#[test]
-fn test_dao_disables_different_lock_script_size_before_limiting_block() {
-    let (consensus, dao_type_script) = build_consensus_with_dao_limiting_block(21000);
-
-    let transaction = TransactionBuilder::default()
-        .outputs(vec![
-            CellOutput::new_builder()
-                .capacity(capacity_bytes!(50).pack())
-                .build(),
-            CellOutput::new_builder()
-                .capacity(capacity_bytes!(200).pack())
-                .lock(
-                    Script::new_builder()
-                        .args(Bytes::from(vec![1; 20]).pack())
-                        .build(),
-                )
-                .type_(Some(dao_type_script.clone()).pack())
-                .build(),
-        ])
-        .outputs_data(vec![Bytes::new().pack(); 2])
-        .build();
-
-    let rtx = Arc::new(ResolvedTransaction {
-        transaction,
-        resolved_cell_deps: Vec::new(),
-        resolved_inputs: vec![
-            CellMetaBuilder::from_cell_output(
-                CellOutput::new_builder()
-                    .capacity(capacity_bytes!(50).pack())
-                    .build(),
-                Bytes::new(),
-            )
-            .transaction_info(mock_transaction_info(
-                20010,
-                EpochNumberWithFraction::new(10, 0, 10),
-                0,
-            ))
-            .build(),
-            CellMetaBuilder::from_cell_output(
-                CellOutput::new_builder()
-                    .capacity(capacity_bytes!(201).pack())
-                    .lock(Script::new_builder().args(Bytes::new().pack()).build())
-                    .type_(Some(dao_type_script).pack())
-                    .build(),
-                Bytes::from(vec![0; 8]),
-            )
-            .transaction_info(mock_transaction_info(
-                20011,
-                EpochNumberWithFraction::new(10, 0, 10),
-                0,
-            ))
-            .build(),
-        ],
-        resolved_dep_groups: vec![],
-    });
-    let verifier = DaoScriptSizeVerifier::new(rtx, consensus, EmptyDataProvider {});
-
-    assert!(verifier.verify().is_ok());
-}
-
-#[test]
-fn test_non_dao_allows_lock_script_size() {
-    let (consensus, _dao_type_script) = build_consensus_with_dao_limiting_block(20000);
-
-    let transaction = TransactionBuilder::default()
-        .outputs(vec![
-            CellOutput::new_builder()
-                .capacity(capacity_bytes!(50).pack())
-                .build(),
-            CellOutput::new_builder()
-                .capacity(capacity_bytes!(200).pack())
-                .lock(
-                    Script::new_builder()
-                        .args(Bytes::from(vec![1; 20]).pack())
-                        .build(),
-                )
-                .build(),
-        ])
-        .outputs_data(vec![Bytes::new().pack(); 2])
-        .build();
-
-    let rtx = Arc::new(ResolvedTransaction {
-        transaction,
-        resolved_cell_deps: Vec::new(),
-        resolved_inputs: vec![
-            CellMetaBuilder::from_cell_output(
-                CellOutput::new_builder()
-                    .capacity(capacity_bytes!(50).pack())
-                    .build(),
-                Bytes::new(),
-            )
-            .transaction_info(mock_transaction_info(
-                20010,
-                EpochNumberWithFraction::new(10, 0, 10),
-                0,
-            ))
-            .build(),
-            CellMetaBuilder::from_cell_output(
-                CellOutput::new_builder()
-                    .capacity(capacity_bytes!(201).pack())
-                    .lock(Script::new_builder().args(Bytes::new().pack()).build())
-                    .build(),
-                Bytes::from(vec![0; 8]),
-            )
-            .transaction_info(mock_transaction_info(
-                20011,
-                EpochNumberWithFraction::new(10, 0, 10),
-                0,
-            ))
-            .build(),
-        ],
-        resolved_dep_groups: vec![],
-    });
-    let verifier = DaoScriptSizeVerifier::new(rtx, consensus, EmptyDataProvider {});
-
-    assert!(verifier.verify().is_ok());
-}
-
-#[test]
-fn test_dao_allows_different_lock_script_size_in_withdraw_phase_2() {
-    let (consensus, dao_type_script) = build_consensus_with_dao_limiting_block(20000);
-
-    let transaction = TransactionBuilder::default()
-        .outputs(vec![
-            CellOutput::new_builder()
-                .capacity(capacity_bytes!(50).pack())
-                .build(),
-            CellOutput::new_builder()
-                .capacity(capacity_bytes!(200).pack())
-                .lock(
-                    Script::new_builder()
-                        .args(Bytes::from(vec![1; 20]).pack())
-                        .build(),
-                )
-                .type_(Some(dao_type_script.clone()).pack())
-                .build(),
-        ])
-        .outputs_data(vec![Bytes::new().pack(); 2])
-        .build();
-
-    let rtx = Arc::new(ResolvedTransaction {
-        transaction,
-        resolved_cell_deps: Vec::new(),
-        resolved_inputs: vec![
-            CellMetaBuilder::from_cell_output(
-                CellOutput::new_builder()
-                    .capacity(capacity_bytes!(50).pack())
-                    .build(),
-                Bytes::new(),
-            )
-            .transaction_info(mock_transaction_info(
-                20010,
-                EpochNumberWithFraction::new(10, 0, 10),
-                0,
-            ))
-            .build(),
-            CellMetaBuilder::from_cell_output(
-                CellOutput::new_builder()
-                    .capacity(capacity_bytes!(201).pack())
-                    .lock(Script::new_builder().args(Bytes::new().pack()).build())
-                    .type_(Some(dao_type_script).pack())
-                    .build(),
-                Bytes::from(vec![1; 8]),
-            )
-            .transaction_info(mock_transaction_info(
-                20011,
-                EpochNumberWithFraction::new(10, 0, 10),
-                0,
-            ))
-            .build(),
-        ],
-        resolved_dep_groups: vec![],
-    });
-    let verifier = DaoScriptSizeVerifier::new(rtx, consensus, EmptyDataProvider {});
-
-    assert!(verifier.verify().is_ok());
-}
-
-#[test]
-fn test_dao_allows_different_lock_script_size_using_normal_cells_in_withdraw_phase_2() {
-    let (consensus, dao_type_script) = build_consensus_with_dao_limiting_block(20000);
-
-    let transaction = TransactionBuilder::default()
-        .outputs(vec![
-            CellOutput::new_builder()
-                .capacity(capacity_bytes!(50).pack())
-                .build(),
-            CellOutput::new_builder()
-                .capacity(capacity_bytes!(200).pack())
-                .lock(
-                    Script::new_builder()
-                        .args(Bytes::from(vec![1; 20]).pack())
-                        .build(),
-                )
-                .type_(Some(dao_type_script).pack())
-                .build(),
-        ])
-        .outputs_data(vec![])
-        .build();
-
-    let rtx = Arc::new(ResolvedTransaction {
-        transaction,
-        resolved_cell_deps: Vec::new(),
-        resolved_inputs: vec![
-            CellMetaBuilder::from_cell_output(
-                CellOutput::new_builder()
-                    .capacity(capacity_bytes!(50).pack())
-                    .build(),
-                Bytes::new(),
-            )
-            .transaction_info(mock_transaction_info(
-                20010,
-                EpochNumberWithFraction::new(10, 0, 10),
-                0,
-            ))
-            .build(),
-            CellMetaBuilder::from_cell_output(
-                CellOutput::new_builder()
-                    .capacity(capacity_bytes!(201).pack())
-                    .lock(Script::new_builder().args(Bytes::new().pack()).build())
-                    .build(),
-                Bytes::from(vec![1; 8]),
-            )
-            .transaction_info(mock_transaction_info(
-                20011,
-                EpochNumberWithFraction::new(10, 0, 10),
-                0,
-            ))
-            .build(),
-        ],
-        resolved_dep_groups: vec![],
-    });
-    let verifier = DaoScriptSizeVerifier::new(rtx, consensus, EmptyDataProvider {});
-
-    assert!(verifier.verify().is_ok());
 }

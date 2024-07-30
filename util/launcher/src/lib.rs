@@ -31,7 +31,7 @@ use ckb_types::prelude::*;
 use ckb_verification::GenesisVerifier;
 use ckb_verification_traits::Verifier;
 
-use block_producer::BlockProducer;
+use branch_chain_producer::BlockProducer;
 
 use std::sync::Arc;
 

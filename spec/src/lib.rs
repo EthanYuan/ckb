@@ -65,6 +65,8 @@ pub const OUTPUT_INDEX_DAO: u64 = 2;
 pub const OUTPUT_INDEX_SECP256K1_DATA: u64 = 3;
 /// The output index of SECP256K1/multisig script in the genesis no.0 transaction
 pub const OUTPUT_INDEX_SECP256K1_BLAKE160_MULTISIG_ALL: u64 = 4;
+/// The output index of Token Manager script in the genesis no.0 transaction
+pub const OUTPUT_INDEX_TOKEN_MANAGER: u64 = 8;
 
 /// The CKB block chain specification
 #[derive(Clone, PartialEq, Eq, Debug, Serialize, Deserialize)]

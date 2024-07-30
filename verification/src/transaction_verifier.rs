@@ -149,7 +149,11 @@ where
                 Arc::clone(&consensus),
                 Arc::clone(&tx_env),
             ),
-            capacity: CapacityVerifier::new(Arc::clone(&rtx), consensus.dao_type_hash()),
+            capacity: CapacityVerifier::new(
+                Arc::clone(&rtx),
+                consensus.dao_type_hash(),
+                consensus.token_manager_type_hash(),
+            ),
             fee_calculator: FeeCalculator::new(rtx, consensus, data_loader),
         }
     }
@@ -256,7 +260,11 @@ impl<DL: CellDataProvider + HeaderProvider + ExtensionProvider + EpochProvider> 
 
     fn transaction_fee(&self) -> Result<Capacity, DaoError> {
         // skip tx fee calculation for cellbase and leap tx
-        if self.transaction.is_cellbase() || self.transaction.is_leap_tx() {
+        if self.transaction.is_cellbase()
+            || self
+                .transaction
+                .is_leap_tx(&self.consensus.token_manager_type_hash)
+        {
             Ok(Capacity::zero())
         } else {
             DaoCalculator::new(self.consensus.as_ref(), &self.data_loader)
@@ -454,14 +462,20 @@ impl<'a> DuplicateDepsVerifier<'a> {
 pub struct CapacityVerifier {
     resolved_transaction: Arc<ResolvedTransaction>,
     dao_type_hash: Byte32,
+    token_manager_type_hash: Byte32,
 }
 
 impl CapacityVerifier {
     /// Create a new `CapacityVerifier`
-    pub fn new(resolved_transaction: Arc<ResolvedTransaction>, dao_type_hash: Byte32) -> Self {
+    pub fn new(
+        resolved_transaction: Arc<ResolvedTransaction>,
+        dao_type_hash: Byte32,
+        token_manager_type_hash: Byte32,
+    ) -> Self {
         CapacityVerifier {
             resolved_transaction,
             dao_type_hash,
+            token_manager_type_hash,
         }
     }
 
@@ -475,7 +489,9 @@ impl CapacityVerifier {
         // DAO withdraw transaction is verified via the type script of DAO cells
         if !(self.resolved_transaction.is_cellbase()
             || self.valid_dao_withdraw_transaction()
-            || self.resolved_transaction.is_leap_tx())
+            || self
+                .resolved_transaction
+                .is_leap_tx(&self.token_manager_type_hash))
         {
             let inputs_sum = self.resolved_transaction.inputs_capacity()?;
             let outputs_sum = self.resolved_transaction.outputs_capacity()?;
@@ -878,7 +894,11 @@ where
                 data_loader.clone(),
                 tx_env,
             ),
-            capacity: CapacityVerifier::new(Arc::clone(&rtx), consensus.dao_type_hash()),
+            capacity: CapacityVerifier::new(
+                Arc::clone(&rtx),
+                consensus.dao_type_hash(),
+                consensus.token_manager_type_hash(),
+            ),
             fee_calculator: FeeCalculator::new(rtx, consensus, data_loader),
         }
     }

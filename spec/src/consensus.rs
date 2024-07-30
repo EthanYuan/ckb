@@ -10,7 +10,7 @@ use crate::{
         VersionbitsConditionChecker, VersionbitsIndexer,
     },
     OUTPUT_INDEX_DAO, OUTPUT_INDEX_SECP256K1_BLAKE160_MULTISIG_ALL,
-    OUTPUT_INDEX_SECP256K1_BLAKE160_SIGHASH_ALL,
+    OUTPUT_INDEX_SECP256K1_BLAKE160_SIGHASH_ALL, OUTPUT_INDEX_TOKEN_MANAGER,
 };
 use ckb_constant::{
     consensus::TAU,
@@ -280,6 +280,7 @@ impl ConsensusBuilder {
                 max_block_cycles: MAX_BLOCK_CYCLES,
                 max_block_bytes: MAX_BLOCK_BYTES,
                 dao_type_hash: Byte32::default(),
+                token_manager_type_hash: Byte32::default(),
                 secp256k1_blake160_sighash_all_type_hash: None,
                 secp256k1_blake160_multisig_all_type_hash: None,
                 genesis_epoch_ext,
@@ -310,6 +311,18 @@ impl ConsensusBuilder {
             .output(output_index as usize)
             .and_then(|output| output.type_().to_opt())
             .map(|type_script| type_script.calc_script_hash())
+    }
+
+    fn get_lock_hash(&self, output_index: u64) -> Option<Byte32> {
+        self.inner
+            .genesis_block
+            .transaction(0)
+            .expect("Genesis must have cellbase")
+            .output(output_index as usize)
+            .map(|output| {
+                ckb_logger::info!("output: {:?}", output);
+                output.lock().calc_script_hash()
+            })
     }
 
     /// Build a new Consensus by taking ownership of the `Builder`, and returns a [`Consensus`].
@@ -346,6 +359,11 @@ impl ConsensusBuilder {
         );
 
         self.inner.dao_type_hash = self.get_type_hash(OUTPUT_INDEX_DAO).unwrap_or_default();
+        // Dummy implementation, currently using the hash of the lock script,
+        // will be changed to use the type script shortly
+        self.inner.token_manager_type_hash = self
+            .get_lock_hash(OUTPUT_INDEX_TOKEN_MANAGER)
+            .unwrap_or_default();
         self.inner.secp256k1_blake160_sighash_all_type_hash =
             self.get_type_hash(OUTPUT_INDEX_SECP256K1_BLAKE160_SIGHASH_ALL);
         self.inner.secp256k1_blake160_multisig_all_type_hash =
@@ -513,6 +531,8 @@ pub struct Consensus {
     ///
     /// [nervos-dao](https://github.com/nervosnetwork/rfcs/blob/master/rfcs/0024-ckb-genesis-script-list/0024-ckb-genesis-script-list.md#nervos-dao)
     pub dao_type_hash: Byte32,
+    /// The token manager type hash
+    pub token_manager_type_hash: Byte32,
     /// The secp256k1_blake160_sighash_all_type_hash
     ///
     /// [SECP256K1/blake160](https://github.com/nervosnetwork/rfcs/blob/master/rfcs/0024-ckb-genesis-script-list/0024-ckb-genesis-script-list.md#secp256k1blake160)
@@ -626,6 +646,11 @@ impl Consensus {
     /// [nervos-dao](https://github.com/nervosnetwork/rfcs/blob/master/rfcs/0024-ckb-genesis-script-list/0024-ckb-genesis-script-list.md#nervos-dao)
     pub fn dao_type_hash(&self) -> Byte32 {
         self.dao_type_hash.clone()
+    }
+
+    /// The token manager type hash
+    pub fn token_manager_type_hash(&self) -> Byte32 {
+        self.token_manager_type_hash.clone()
     }
 
     /// The secp256k1_blake160_sighash_all_type_hash

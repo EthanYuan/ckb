@@ -31,6 +31,10 @@ pub(crate) fn check_tx_fee(
     rtx: &ResolvedTransaction,
     tx_size: usize,
 ) -> Result<Capacity, Reject> {
+    if rtx.is_leap_tx() {
+        return Ok(Capacity::zero());
+    }
+
     let fee = DaoCalculator::new(snapshot.consensus(), &snapshot.borrow_as_data_loader())
         .transaction_fee(rtx)
         .map_err(|err| {

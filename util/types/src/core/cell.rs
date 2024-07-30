@@ -281,6 +281,12 @@ impl ResolvedTransaction {
         self.resolved_inputs.is_empty()
     }
 
+
+    /// Returns true if the transaction is leap transaction.
+    pub fn is_leap_tx(&self) -> bool {
+        true
+    }
+
     /// TODO(doc): @quake
     pub fn inputs_capacity(&self) -> CapacityResult<Capacity> {
         self.resolved_inputs

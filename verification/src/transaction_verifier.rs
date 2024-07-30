@@ -255,8 +255,8 @@ impl<DL: CellDataProvider + HeaderProvider + ExtensionProvider + EpochProvider> 
     }
 
     fn transaction_fee(&self) -> Result<Capacity, DaoError> {
-        // skip tx fee calculation for cellbase
-        if self.transaction.is_cellbase() {
+        // skip tx fee calculation for cellbase and leap tx
+        if self.transaction.is_cellbase() || self.transaction.is_leap_tx() {
             Ok(Capacity::zero())
         } else {
             DaoCalculator::new(self.consensus.as_ref(), &self.data_loader)
@@ -468,11 +468,15 @@ impl CapacityVerifier {
     /// Verify sum of inputs capacity should be greater than or equal to sum of outputs capacity
     /// Verify outputs capacity should be greater than or equal to its occupied capacity
     pub fn verify(&self) -> Result<(), Error> {
-        // skip OutputsSumOverflow verification for resolved cellbase and DAO
-        // withdraw transactions.
+        // skip OutputsSumOverflow verification for resolved cellbase, leap tx
+        // and DAO withdraw transactions.
         // cellbase's outputs are verified by RewardVerifier
+        // leap transaction is verified via the type script of Token Manager cell
         // DAO withdraw transaction is verified via the type script of DAO cells
-        if !(self.resolved_transaction.is_cellbase() || self.valid_dao_withdraw_transaction()) {
+        if !(self.resolved_transaction.is_cellbase()
+            || self.valid_dao_withdraw_transaction()
+            || self.resolved_transaction.is_leap_tx())
+        {
             let inputs_sum = self.resolved_transaction.inputs_capacity()?;
             let outputs_sum = self.resolved_transaction.outputs_capacity()?;
 

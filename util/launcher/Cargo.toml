@@ -33,7 +33,7 @@ ckb-tx-pool = { path = "../../tx-pool", version = "= 0.116.1" }
 ckb-light-client-protocol-server = { path = "../light-client-protocol-server", version = "= 0.116.1" }
 ckb-block-filter = { path = "../../block-filter", version = "= 0.116.1" }
 branch-chain-producer = { path = "../../branch-chain-producer", version = "= 0.1.0" }
-
+branch-chain-aggregator = { path = "../../branch-chain-aggregator", version = "= 0.1.0" }
 
 [features]
 with_sentry = [ "ckb-sync/with_sentry", "ckb-network/with_sentry", "ckb-app-config/with_sentry" ]

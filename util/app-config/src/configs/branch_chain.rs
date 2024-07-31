@@ -5,19 +5,11 @@ use std::num::NonZeroUsize;
 use std::path::{Path, PathBuf};
 
 /// Branch Chain config options.
-#[derive(Clone, Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug, Serialize, Deserialize, Default)]
 pub struct BranchChainConfig {
     /// Aggregator config options
     #[serde(default)]
     pub aggregator: AggregatorConfig,
-}
-
-impl Default for BranchChainConfig {
-    fn default() -> Self {
-        BranchChainConfig {
-            aggregator: AggregatorConfig::default(),
-        }
-    }
 }
 
 impl BranchChainConfig {

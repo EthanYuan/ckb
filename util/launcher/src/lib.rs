@@ -2,6 +2,7 @@
 //!
 //! ckb launcher is helps to launch ckb node.
 
+use branch_chain_aggregator::Aggregator;
 use ckb_app_config::{
     BlockAssemblerConfig, ExitCode, RpcConfig, RpcModule, RunArgs, SupportProtocol,
 };
@@ -393,6 +394,7 @@ impl Launcher {
         .start(shared.async_handle())
         .expect("Start network service failed");
 
+        // Branch Chain block producer
         let block_producer = BlockProducer::new(
             network_controller.clone(),
             shared.clone(),
@@ -400,6 +402,11 @@ impl Launcher {
             Duration::from_secs(2),
         );
         block_producer.produce_blocks_on_schedule();
+
+        // Branch Chain Aggregator
+        let aggregator_config = self.args.config.branch_chain.aggregator.clone();
+        let aggregator = Aggregator::new(aggregator_config, shared.async_handle().clone());
+        aggregator.run();
 
         let rpc_config = self.adjust_rpc_config();
         let mut builder = ServiceBuilder::new(&rpc_config)

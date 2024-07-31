@@ -1,3 +1,4 @@
+mod branch_chain;
 mod db;
 mod indexer;
 mod memory_tracker;
@@ -10,6 +11,7 @@ mod rpc;
 mod store;
 mod tx_pool;
 
+pub use branch_chain::{AggregatorConfig, BranchChainConfig};
 pub use db::Config as DBConfig;
 pub use indexer::{IndexerConfig, IndexerSyncConfig};
 pub use memory_tracker::Config as MemoryTrackerConfig;

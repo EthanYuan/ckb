@@ -71,7 +71,7 @@ impl RpcClient {
 }
 
 impl RpcClient {
-    pub fn get_live_cell(&self, out_point: &OutPoint, with_data: bool) -> Rpc<CellWithStatus> {
+    pub fn _get_live_cell(&self, out_point: &OutPoint, with_data: bool) -> Rpc<CellWithStatus> {
         jsonrpc!("get_live_cell", self, CellWithStatus, out_point, with_data).boxed()
     }
 

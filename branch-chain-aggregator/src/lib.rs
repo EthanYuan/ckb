@@ -2,6 +2,7 @@
 
 pub(crate) mod client;
 pub(crate) mod error;
+pub(crate) mod schemas;
 
 use ckb_app_config::AggregatorConfig;
 use ckb_async_runtime::{

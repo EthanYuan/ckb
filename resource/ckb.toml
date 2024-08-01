@@ -222,7 +222,12 @@ block_uncles_cache_size    = 30
 #
 # # Branch Chain built-in aggregator settings.
 # [branch_chain.aggregator]
-# # RGB++ uri
+# # RGB++ 
 # rgbpp_uri = "http://127.0.0.1:8114"
-# # RGB++ Request script code hash
 # rgbpp_request_lock_code_hash = "0x"
+# rgbpp_message_queue_type_code_hash = "0x"
+# rgbpp_message_queue_type_args = "0x"
+# rgbpp_sighash_key_path = "./rgbpp_key"
+# # Branch Chain
+# branch_chain_sighash_key_path = "./branch_chain_key"
+

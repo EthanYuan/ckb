@@ -1,4 +1,4 @@
-use ckb_types::H256;
+use ckb_types::{bytes::Bytes, H256};
 use serde::{Deserialize, Serialize};
 
 use std::path::{Path, PathBuf};
@@ -49,6 +49,18 @@ pub struct AggregatorConfig {
     /// RGB++ request lock code hash
     #[serde(default)]
     pub rgbpp_request_lock_code_hash: H256,
+    /// RGB++ message queue type code hash
+    #[serde(default)]
+    pub rgbpp_message_queue_type_code_hash: H256,
+    /// RGB++ message queue type args
+    #[serde(default)]
+    pub rgbpp_message_queue_type_args: Bytes,
+    /// RGB++ sighash key path
+    #[serde(default)]
+    pub rgbpp_sighash_key_path: PathBuf,
+    /// RGB++ branch chain sighash key path
+    #[serde(default)]
+    pub branch_chain_sighash_key_path: PathBuf,
 }
 
 impl Default for AggregatorConfig {
@@ -57,6 +69,10 @@ impl Default for AggregatorConfig {
             store: PathBuf::new(),
             rgbpp_uri: "http://127.0.0.1:8114".to_string(),
             rgbpp_request_lock_code_hash: H256::default(),
+            rgbpp_message_queue_type_code_hash: H256::default(),
+            rgbpp_message_queue_type_args: Bytes::default(),
+            rgbpp_sighash_key_path: PathBuf::new(),
+            branch_chain_sighash_key_path: PathBuf::new(),
         }
     }
 }

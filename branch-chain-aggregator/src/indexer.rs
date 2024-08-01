@@ -237,6 +237,7 @@ pub struct DetailedLiveCell {
     pub cell_data: Bytes,
 }
 
+#[derive(Clone)]
 pub struct Indexer<S> {
     store: S,
     // number of blocks to keep for rollback and forking, for example:
@@ -249,7 +250,10 @@ pub struct Indexer<S> {
     custom_filters: CustomFilters,
 }
 
-impl<S> Indexer<S> {
+impl<S> Indexer<S>
+where
+    S: Store + Send + Clone + 'static,
+{
     pub fn new(
         store: S,
         keep_num: u64,
@@ -845,6 +849,12 @@ pub struct CustomFilters {
     cell_filter: Option<AST>,
 }
 
+impl Clone for CustomFilters {
+    fn clone(&self) -> Self {
+        CustomFilters::from_filters(self.block_filter.clone(), self.cell_filter.clone())
+    }
+}
+
 fn to_uint(s: &str) -> Result<U256, Box<EvalAltResult>> {
     match &s[..2] {
         "0b" => U256::from_bin_str(&s[2..]),
@@ -880,6 +890,18 @@ impl CustomFilters {
                 .expect("compile cell_filter should be ok")
         });
 
+        Self {
+            engine,
+            block_filter,
+            cell_filter,
+        }
+    }
+
+    /// Construct new CustomFilters
+    pub fn from_filters(block_filter: Option<AST>, cell_filter: Option<AST>) -> Self {
+        let mut engine = Engine::new();
+        engine.register_fn("to_uint", to_uint);
+        register_ops!(engine, +, -, *, /, %, ==, !=, <, <=, >, >=);
         Self {
             engine,
             block_filter,

@@ -1,7 +1,6 @@
 use ckb_types::H256;
 use serde::{Deserialize, Serialize};
 
-use std::num::NonZeroUsize;
 use std::path::{Path, PathBuf};
 
 /// Branch Chain config options.
@@ -47,41 +46,17 @@ pub struct AggregatorConfig {
     /// which will be realized through AggregatorConfig::adjust.
     #[serde(default)]
     pub store: PathBuf,
-    /// The poll interval by secs
-    #[serde(default = "default_poll_interval")]
-    pub poll_interval: u64,
-    /// Customize block filter
+    /// RGB++ request lock code hash
     #[serde(default)]
-    pub block_filter: Option<String>,
-    /// Customize cell filter
-    #[serde(default)]
-    pub cell_filter: Option<String>,
-    /// Maximum number of concurrent db background jobs (compactions and flushes)
-    #[serde(default)]
-    pub db_background_jobs: Option<NonZeroUsize>,
-    /// Maximal db info log files to be kept.
-    #[serde(default)]
-    pub db_keep_log_file_num: Option<NonZeroUsize>,
-    /// The init tip block hash
-    #[serde(default)]
-    pub init_tip_hash: Option<H256>,
-}
-
-const fn default_poll_interval() -> u64 {
-    2
+    pub rgbpp_request_lock_code_hash: H256,
 }
 
 impl Default for AggregatorConfig {
     fn default() -> Self {
         AggregatorConfig {
-            rgbpp_uri: "http://127.0.0.1:8114".to_string(),
-            poll_interval: 2,
             store: PathBuf::new(),
-            block_filter: None,
-            cell_filter: None,
-            db_background_jobs: None,
-            db_keep_log_file_num: None,
-            init_tip_hash: None,
+            rgbpp_uri: "http://127.0.0.1:8114".to_string(),
+            rgbpp_request_lock_code_hash: H256::default(),
         }
     }
 }

@@ -405,7 +405,12 @@ impl Launcher {
 
         // Branch Chain Aggregator
         let aggregator_config = self.args.config.branch_chain.aggregator.clone();
-        let aggregator = Aggregator::new(aggregator_config, shared.async_handle().clone());
+        let aggregator = Aggregator::new(
+            aggregator_config,
+            shared.async_handle().clone(),
+            Duration::from_secs(2),
+        );
+
         aggregator.run();
 
         let rpc_config = self.adjust_rpc_config();

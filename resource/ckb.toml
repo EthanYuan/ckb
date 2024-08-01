@@ -220,13 +220,9 @@ block_uncles_cache_size    = 30
 # # Branch Chain settings.
 # [branch_chain]
 #
-# Branch Chain built-in aggregator settings.
+# # Branch Chain built-in aggregator settings.
 # [branch_chain.aggregator]
 # # RGB++ uri
 # rgbpp_uri = "http://127.0.0.1:8114"
-# # Customize block filtering rules to index only retained blocks
-# block_filter = "block.header.number.to_uint() >= \"0x0\".to_uint()"
-# # Customize cell filtering rules to index only retained cells
-# cell_filter = "let script = output.type;script!=() && script.code_hash == \"0x00000000000000000000000000000000000000000000000000545950455f4944\""
-# # The initial tip can be set higher than the current indexer tip as the starting height for indexing.
-# init_tip_hash = "0x8fbd0ec887159d2814cee475911600e3589849670f5ee1ed9798b38fdeef4e44"
+# # RGB++ Request script code hash
+# rgbpp_request_lock_code_hash = "0x"

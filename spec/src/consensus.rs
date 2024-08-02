@@ -319,10 +319,7 @@ impl ConsensusBuilder {
             .transaction(0)
             .expect("Genesis must have cellbase")
             .output(output_index as usize)
-            .map(|output| {
-                ckb_logger::info!("output: {:?}", output);
-                output.lock().calc_script_hash()
-            })
+            .map(|output| output.lock().calc_script_hash())
     }
 
     /// Build a new Consensus by taking ownership of the `Builder`, and returns a [`Consensus`].

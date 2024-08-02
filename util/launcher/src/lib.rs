@@ -409,6 +409,7 @@ impl Launcher {
             aggregator_config,
             shared.async_handle().clone(),
             Duration::from_secs(2),
+            shared.consensus().identify_name(),
         );
 
         aggregator.run();

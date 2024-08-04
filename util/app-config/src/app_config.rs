@@ -94,7 +94,7 @@ pub struct CKBAppConfig {
     pub indexer: IndexerConfig,
     /// Branch config options.
     #[serde(default)]
-    pub branch_chain: BranchChainConfig,
+    pub aggregator: AggregatorConfig,
 }
 
 /// The miner config file for `ckb miner`. Usually it is the `ckb-miner.toml` in the CKB root
@@ -301,7 +301,7 @@ impl CKBAppConfig {
         self.indexer.adjust(root_dir, indexer_path);
 
         let branch_chain_path = mkdir(self.data_dir.join("branch_chain"))?;
-        self.branch_chain.adjust(root_dir, branch_chain_path);
+        self.aggregator.adjust(root_dir, branch_chain_path);
 
         if subcommand_name == cli::CMD_RESET_DATA {
             return Ok(self);

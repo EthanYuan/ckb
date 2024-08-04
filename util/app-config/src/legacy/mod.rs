@@ -60,7 +60,7 @@ pub(crate) struct CKBAppConfig {
     #[serde(default)]
     indexer_v2: crate::IndexerConfig,
     #[serde(default)]
-    branch_chain: crate::BranchChainConfig,
+    aggregator: crate::AggregatorConfig,
 }
 
 #[derive(Clone, Debug, Deserialize)]
@@ -108,7 +108,7 @@ impl From<CKBAppConfig> for crate::CKBAppConfig {
             alert_signature,
             notify,
             indexer_v2,
-            branch_chain,
+            aggregator,
         } = input;
         #[cfg(not(feature = "with_sentry"))]
         let _ = sentry;
@@ -134,7 +134,7 @@ impl From<CKBAppConfig> for crate::CKBAppConfig {
             alert_signature,
             notify,
             indexer: indexer_v2,
-            branch_chain,
+            aggregator,
         }
     }
 }

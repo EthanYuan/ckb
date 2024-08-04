@@ -404,7 +404,7 @@ impl Launcher {
         block_producer.produce_blocks_on_schedule();
 
         // Branch Chain Aggregator
-        let aggregator_config = self.args.config.branch_chain.aggregator.clone();
+        let aggregator_config = self.args.config.aggregator.clone();
         let aggregator = Aggregator::new(
             aggregator_config,
             shared.async_handle().clone(),

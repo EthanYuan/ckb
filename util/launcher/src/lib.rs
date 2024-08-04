@@ -411,7 +411,6 @@ impl Launcher {
             Duration::from_secs(2),
             shared.consensus().identify_name(),
         );
-
         aggregator.run();
 
         let rpc_config = self.adjust_rpc_config();

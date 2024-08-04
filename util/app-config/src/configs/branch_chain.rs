@@ -22,7 +22,7 @@ pub struct AggregatorConfig {
     /// RGB++ message queue type args
     #[serde(default)]
     pub rgbpp_message_queue_type_args: Bytes,
-    /// RGB++ queue lock key path
+    /// RGB++ queue cell lock key path
     #[serde(default)]
     pub rgbpp_queue_lock_key_path: PathBuf,
     /// RGB++ custodian lock key path

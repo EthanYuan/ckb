@@ -7,9 +7,12 @@ pub(crate) mod utils;
 
 use crate::client::RpcClient;
 use crate::error::Error;
-use crate::utils::get_sighash_script_from_privkey;
+use crate::utils::{
+    decode_udt_amount, encode_udt_amount, get_sighash_script_from_privkey, REQUEST_LOCK, SECP256K1,
+    XUDT,
+};
 
-use ckb_app_config::AggregatorConfig;
+use ckb_app_config::{AggregatorConfig, ScriptConfig};
 use ckb_async_runtime::{
     tokio::{
         self,
@@ -19,17 +22,24 @@ use ckb_async_runtime::{
 };
 use ckb_logger::{error, info};
 use ckb_sdk::{
+    core::TransactionBuilder,
     rpc::ckb_indexer::Cell,
     traits::{CellQueryOptions, MaturityOption, PrimaryScriptType, QueryOrder},
 };
 use ckb_stop_handler::{new_tokio_exit_rx, CancellationToken};
 use ckb_types::{
-    core::ScriptHashType,
-    packed::{Byte32, CellInput, CellOutput, Script},
+    bytes::Bytes,
+    packed::{CellDep, CellInput, CellOutput, Script},
     prelude::*,
 };
 use molecule::prelude::Byte;
-use schemas::leap::{CrossChainQueue, Message, Request, RequestContent, RequestLockArgs, Requests};
+use schemas::leap::{
+    CrossChainQueue, Message, MessageUnion, Request, RequestContent, RequestLockArgs, Requests,
+    Transfer,
+};
+use utils::QUEUE_TYPE;
+
+use std::collections::HashMap;
 
 ///
 #[derive(Clone)]
@@ -39,6 +49,14 @@ pub struct Aggregator {
     async_handle: Handle,
     poll_interval: Duration,
     rpc_client: RpcClient,
+    rgbpp_scripts: HashMap<String, ScriptInfo>,
+    _branch_scripts: HashMap<String, ScriptInfo>,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct ScriptInfo {
+    pub script: Script,
+    pub cell_dep: CellDep,
 }
 
 #[allow(dead_code)]
@@ -59,10 +77,12 @@ impl Aggregator {
         let rpc_client = RpcClient::new(&config.rgbpp_uri);
         Aggregator {
             chain_id,
-            config,
+            config: config.clone(),
             async_handle,
             poll_interval,
             rpc_client,
+            rgbpp_scripts: get_script_map(config.rgbpp_scripts.clone()),
+            _branch_scripts: get_script_map(config.branch_scripts.clone()),
         }
     }
 
@@ -89,7 +109,7 @@ impl Aggregator {
                     _ = interval.tick() => {
                         let service = poll_service.clone();
                         if let Err(e) = service.scan_rgbpp_request().await {
-                            error!("Error scan RGB++ request : {:?}", e);
+                            error!("Aggregator Error: {:?}", e);
                         }
                     }
                     _ = stop.cancelled() => {
@@ -106,7 +126,7 @@ impl Aggregator {
 
         let stop: CancellationToken = new_tokio_exit_rx();
 
-        let request_search_option = self.build_request_cell_search_option();
+        let request_search_option = self.build_request_cell_search_option()?;
         let mut cursor = None;
         let limit = 10;
 
@@ -128,7 +148,9 @@ impl Aggregator {
             }
             cursor = Some(request_cells.last_cursor);
 
+            info!("Found {} request cells", request_cells.objects.len());
             let cells_with_messge = self.check_request(request_cells.objects.clone());
+            info!("Found {} valid request cells", cells_with_messge.len());
             self.create_custodian_tx(cells_with_messge).await?;
             self.create_leap_tx();
             self.create_update_rgbpp_queue_tx();
@@ -137,27 +159,13 @@ impl Aggregator {
         Ok(())
     }
 
-    fn build_request_cell_search_option(&self) -> CellQueryOptions {
-        let request_script = Script::new_builder()
-            .code_hash(self.config.rgbpp_request_lock_code_hash.clone().0.pack())
-            .hash_type(ScriptHashType::Type.into())
-            .build();
-        CellQueryOptions::new_lock(request_script)
+    fn build_request_cell_search_option(&self) -> Result<CellQueryOptions, Error> {
+        let request_script = self.get_rgbpp_script(REQUEST_LOCK)?;
+        Ok(CellQueryOptions::new_lock(request_script))
     }
 
     fn build_message_queue_cell_search_option(&self) -> Result<CellQueryOptions, Error> {
-        let message_queue_type = Script::new_builder()
-            .code_hash(
-                self.config
-                    .rgbpp_message_queue_type_code_hash
-                    .clone()
-                    .0
-                    .pack(),
-            )
-            .hash_type(ScriptHashType::Type.into())
-            .args(self.config.rgbpp_message_queue_type_args.to_vec().pack())
-            .build();
-
+        let message_queue_type = self.get_rgbpp_script(QUEUE_TYPE)?;
         let message_queue_lock =
             get_sighash_script_from_privkey(self.config.rgbpp_queue_lock_key_path.clone())?;
 
@@ -179,21 +187,42 @@ impl Aggregator {
         Ok(cell_query_option)
     }
 
-    fn check_request(&self, cells: Vec<Cell>) -> Vec<(Cell, Message)> {
+    fn check_request(&self, cells: Vec<Cell>) -> Vec<(Cell, Transfer)> {
         cells
             .into_iter()
             .filter_map(|cell| {
                 RequestLockArgs::from_slice(cell.output.lock.args.as_bytes())
                     .ok()
                     .and_then(|args| {
+                        let target_request_type_hash = args.request_type_hash();
                         let content = args.content();
                         let target_chain_id = content.target_chain_id().as_bytes();
                         let request_type = content.request_type();
                         let message = content.message();
-                        if self.chain_id.clone() == target_chain_id
+                        let (check_message, transfer) = {
+                            let message_union = message.to_enum();
+                            match message_union {
+                                MessageUnion::Transfer(transfer) => {
+                                    let transfer_amount: u128 = transfer.amount().unpack();
+                                    let check_message = cell
+                                        .clone()
+                                        .output_data
+                                        .and_then(|data| decode_udt_amount(&data.as_bytes()))
+                                        .map_or(false, |amount| transfer_amount <= amount);
+                                    (check_message, transfer)
+                                }
+                            }
+                        };
+                        let request_type_hash = self
+                            .rgbpp_scripts
+                            .get(QUEUE_TYPE)
+                            .map(|script_info| script_info.script.calc_script_hash());
+                        if Some(target_request_type_hash) == request_type_hash
+                            && self.chain_id.clone() == target_chain_id
                             && request_type == Byte::new(RequestType::CkbToBranch as u8)
+                            && check_message
                         {
-                            Some((cell, message))
+                            Some((cell, transfer))
                         } else {
                             None
                         }
@@ -202,7 +231,7 @@ impl Aggregator {
             .collect()
     }
 
-    async fn create_custodian_tx(&self, request_cells: Vec<(Cell, Message)>) -> Result<(), Error> {
+    async fn create_custodian_tx(&self, request_cells: Vec<(Cell, Transfer)>) -> Result<(), Error> {
         // get queue cell
         let queue_cell_search_option = self.build_message_queue_cell_search_option()?;
         let queue_cell = self
@@ -218,11 +247,15 @@ impl Aggregator {
         // build new queue
         let mut request_ids = vec![];
         let mut requests = vec![];
-        for (cell, message) in request_cells.clone() {
+        for (cell, transfer) in request_cells.clone() {
             let request_content = RequestContent::new_builder()
                 .request_type(Byte::new(RequestType::CkbToBranch as u8))
                 .target_chain_id(self.chain_id.pack())
-                .message(message.clone())
+                .message(
+                    Message::new_builder()
+                        .set(MessageUnion::Transfer(transfer))
+                        .build(),
+                )
                 .build();
             let request = Request::new_builder()
                 .request_cell(cell.out_point.into())
@@ -248,35 +281,48 @@ impl Aggregator {
             get_sighash_script_from_privkey(self.config.rgbpp_custodian_lock_key_path.clone())?;
 
         // build inputs
-        let inputs = std::iter::once(queue_cell.out_point)
+        let inputs: Vec<CellInput> = std::iter::once(queue_cell.out_point)
             .chain(request_cells.iter().map(|(cell, _)| cell.out_point.clone()))
             .map(|out_point| {
                 CellInput::new_builder()
                     .previous_output(out_point.into())
                     .build()
-            });
+            })
+            .collect();
 
         // build outputs
         let mut outputs = vec![queue_cell.output.into()];
-        for (cell, _) in request_cells {
-            let output: CellOutput = cell.output.into();
-            let output = output.as_builder()
-                .lock(custodian_lock.clone()) // 替换为 custodian lock
-                .build();
+        let mut outputs_data = vec![queue_data.as_bytes().pack()];
+        for (cell, transfer) in &request_cells {
+            let output: CellOutput = cell.output.clone().into();
+            let output = output.as_builder().lock(custodian_lock.clone()).build();
             outputs.push(output);
+
+            let udt_amount: u128 = transfer.amount().unpack();
+            outputs_data.push(Bytes::from(encode_udt_amount(udt_amount)).pack());
         }
 
-        // build outputs data
-        let mut outputs_data = vec![queue_data.as_bytes().pack()];
-
         // cell deps
-
+        let secp256k1_cell_dep = self.get_rgbpp_cell_dep(SECP256K1)?;
+        let xudt_cell_dep = self.get_rgbpp_cell_dep(XUDT)?;
+        let request_cell_dep = self.get_rgbpp_cell_dep(REQUEST_LOCK)?;
+        let queue_type_cell_dep = self.get_rgbpp_cell_dep(QUEUE_TYPE)?;
 
         // build transaction
-
+        let mut tx_builder = TransactionBuilder::default();
+        tx_builder
+            .inputs(inputs)
+            .outputs(outputs)
+            .outputs_data(outputs_data)
+            .cell_deps(vec![
+                secp256k1_cell_dep,
+                xudt_cell_dep,
+                request_cell_dep,
+                queue_type_cell_dep,
+            ])
+            .witness(queue_witness.as_bytes().pack());
 
         // sign
-
 
         // send tx
 
@@ -290,4 +336,52 @@ impl Aggregator {
     fn create_update_rgbpp_queue_tx(&self) {
         // TODO
     }
+
+    pub fn get_rgbpp_cell_dep(&self, script_name: &str) -> Result<CellDep, Error> {
+        self.rgbpp_scripts
+            .get(script_name)
+            .map(|script_info| script_info.cell_dep.clone())
+            .ok_or_else(|| Error::MissingScriptInfo(script_name.to_string()))
+    }
+
+    pub fn get_branch_cell_dep(&self, script_name: &str) -> Result<CellDep, Error> {
+        self._branch_scripts
+            .get(script_name)
+            .map(|script_info| script_info.cell_dep.clone())
+            .ok_or_else(|| Error::MissingScriptInfo(script_name.to_string()))
+    }
+
+    pub fn get_rgbpp_script(&self, script_name: &str) -> Result<Script, Error> {
+        self.rgbpp_scripts
+            .get(script_name)
+            .map(|script_info| script_info.script.clone())
+            .ok_or_else(|| Error::MissingScriptInfo(script_name.to_string()))
+    }
+
+    pub fn get_branch_script(&self, script_name: &str) -> Result<Script, Error> {
+        self._branch_scripts
+            .get(script_name)
+            .map(|script_info| script_info.script.clone())
+            .ok_or_else(|| Error::MissingScriptInfo(script_name.to_string()))
+    }
+}
+
+/// Get scripts map.
+pub fn get_script_map(scripts: Vec<ScriptConfig>) -> HashMap<String, ScriptInfo> {
+    scripts
+        .iter()
+        .map(|s| {
+            (
+                s.script_name.clone(),
+                ScriptInfo {
+                    script: serde_json::from_str::<ckb_jsonrpc_types::Script>(&s.script)
+                        .expect("config string to script")
+                        .into(),
+                    cell_dep: serde_json::from_str::<ckb_jsonrpc_types::CellDep>(&s.cell_dep)
+                        .expect("config string to cell dep")
+                        .into(),
+                },
+            )
+        })
+        .collect()
 }

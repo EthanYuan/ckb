@@ -1,4 +1,4 @@
-use ckb_types::{bytes::Bytes, H256};
+use ckb_types::bytes::Bytes;
 use serde::{Deserialize, Serialize};
 
 use std::path::{Path, PathBuf};
@@ -13,15 +13,6 @@ pub struct AggregatorConfig {
     /// which will be realized through AggregatorConfig::adjust.
     #[serde(default)]
     pub store: PathBuf,
-    /// RGB++ request lock code hash
-    #[serde(default)]
-    pub rgbpp_request_lock_code_hash: H256,
-    /// RGB++ message queue type code hash
-    #[serde(default)]
-    pub rgbpp_message_queue_type_code_hash: H256,
-    /// RGB++ message queue type args
-    #[serde(default)]
-    pub rgbpp_message_queue_type_args: Bytes,
     /// RGB++ queue cell lock key path
     #[serde(default)]
     pub rgbpp_queue_lock_key_path: PathBuf,
@@ -34,6 +25,23 @@ pub struct AggregatorConfig {
     /// RGB++ branch chain token manager lock key path
     #[serde(default)]
     pub branch_chain_token_manager_lock_key_path: PathBuf,
+    /// RGB++ scripts
+    #[serde(default)]
+    pub rgbpp_scripts: Vec<ScriptConfig>,
+    /// Branch Chain scripts
+    #[serde(default)]
+    pub branch_scripts: Vec<ScriptConfig>,
+}
+
+/// Script config options.
+#[derive(Serialize, Deserialize, Default, Clone, Debug)]
+pub struct ScriptConfig {
+    /// Script name
+    pub script_name: String,
+    /// Script type
+    pub script: String,
+    /// Cell dep
+    pub cell_dep: String,
 }
 
 impl Default for AggregatorConfig {
@@ -41,13 +49,12 @@ impl Default for AggregatorConfig {
         AggregatorConfig {
             store: PathBuf::new(),
             rgbpp_uri: "http://127.0.0.1:8114".to_string(),
-            rgbpp_request_lock_code_hash: H256::default(),
-            rgbpp_message_queue_type_code_hash: H256::default(),
-            rgbpp_message_queue_type_args: Bytes::default(),
             rgbpp_queue_lock_key_path: PathBuf::new(),
             rgbpp_custodian_lock_key_path: PathBuf::new(),
             capacity_asset_id: Bytes::default(),
             branch_chain_token_manager_lock_key_path: PathBuf::new(),
+            rgbpp_scripts: Vec::new(),
+            branch_scripts: Vec::new(),
         }
     }
 }

@@ -3,14 +3,13 @@
 use crate::error::Error;
 
 use ckb_hash::blake2b_256;
-use ckb_logger::info;
 use ckb_types::{
     bytes::Bytes,
     core::ScriptHashType,
     h256,
     packed::Script,
     prelude::{Builder, Entity, Pack},
-    H160, H256,
+    H256,
 };
 use secp256k1;
 

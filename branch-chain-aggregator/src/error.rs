@@ -14,4 +14,6 @@ pub enum Error {
     BinaryFileReadError(String),
     #[error("error while decoding queue cell data")]
     QueueCellDataDecodeError,
+    #[error("missing script info: {0}")]
+    MissingScriptInfo(String),
 }

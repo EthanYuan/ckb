@@ -217,16 +217,89 @@ block_uncles_cache_size    = 30
 # db_user = "postgres"
 # db_password = "123456"
 
-# # Branch Chain built-in aggregator settings.
-# [aggregator]
-# # RGB++ 
-# rgbpp_uri = "http://127.0.0.1:8114"
-# rgbpp_request_lock_code_hash = "0x"
-# rgbpp_message_queue_type_code_hash = "0x"
-# rgbpp_message_queue_type_args = "0x"
+# Branch Chain built-in aggregator settings.
+[aggregator]
+# RGB++ uri
+rgbpp_uri = "https://testnet.ckb.dev"
 # rgbpp_queue_lock_key_path = "./rgbpp_key"
 # rgbpp_custodian_lock_key_path = "./rgbpp_key"
 # # Branch Chain
 # # Leap tx determines whether mint capacity or xudt
 # capacity_asset_id = "0x"
 # branch_chain_token_manager_lock_key_path = "./branch_chain_key"
+
+[[aggregator.rgbpp_scripts]]
+script_name = "secp256k1_blake160"
+script = '''
+{
+    "args": "0x",
+    "code_hash": "0x9bd7e06f3ecf4be0f2fcd2188b23f1b9fcc88e5d4b65a8637b17723bbda3cce8",
+    "hash_type": "type"
+}
+'''
+cell_dep = '''
+{
+    "dep_type": "dep_group",
+    "out_point": {
+        "index": "0x0",
+        "tx_hash": "0xf8de3bb47d055cdf460d93a2a6e1b05f7432f9777c8c474abf4eec1d4aee5d37"
+    }
+}
+'''
+
+[[aggregator.rgbpp_scripts]]
+script_name = "xudt"
+script = '''
+{
+    "args": "0x",
+    "code_hash": "0x25c29dc317811a6f6f3985a7a9ebc4838bd388d19d0feeecf0bcd60f6c0975bb",
+    "hash_type": "type"
+}
+'''
+cell_dep = '''
+{
+    "dep_type": "code",
+    "out_point": {
+        "index": "0x0",
+        "tx_hash": "0xbf6fb538763efec2a70a6a3dcb7242787087e1030c4e7d86585bc63a9d337f5f"
+    }
+}
+'''
+
+# [[aggregator.rgbpp_scripts]]
+# script_name = "request_lock"
+# script = '''
+# {
+#     "args": "0x",
+#     "code_hash": "0x0000000000000000000000000000000000000000000000000000000000000000",
+#     "hash_type": "type"
+# }
+# '''
+# cell_dep = '''
+# {
+#     "dep_type": "code",
+#     "out_point": {
+#         "index": "0x0",
+#         "tx_hash": "0x0000000000000000000000000000000000000000000000000000000000000000"
+#     }
+# }
+# '''
+
+# [[aggregator.rgbpp_scripts]]
+# script_name = "queue_type"
+# script = '''
+# {
+#     "args": "0x",
+#     "code_hash": "0x0000000000000000000000000000000000000000000000000000000000000000",
+#     "hash_type": "type"
+# }
+# '''
+# cell_dep = '''
+# {
+#     "dep_type": "code",
+#     "out_point": {
+#         "index": "0x0",
+#         "tx_hash": "0x0000000000000000000000000000000000000000000000000000000000000000"
+#     }
+# }
+# '''

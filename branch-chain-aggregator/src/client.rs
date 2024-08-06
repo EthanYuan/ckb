@@ -3,9 +3,12 @@ use std::pin::Pin;
 use std::sync::atomic::{AtomicU64, Ordering};
 use std::sync::Arc;
 
-use ckb_jsonrpc_types::{CellWithStatus, JsonBytes, OutPoint, Uint32};
+use ckb_jsonrpc_types::{
+    CellWithStatus, FeeRateStatistics, JsonBytes, OutPoint, OutputsValidator, Transaction, Uint32,
+};
 use ckb_logger::error;
 use ckb_sdk::rpc::ckb_indexer::{Cell, Order, Pagination, SearchKey};
+use ckb_types::H256;
 use jsonrpc_core::futures::FutureExt;
 use reqwest::{Client, Url};
 
@@ -94,5 +97,17 @@ impl RpcClient {
             cursor,
         )
         .boxed()
+    }
+
+    pub fn dynamic_fee_rate(&self) -> Rpc<Option<FeeRateStatistics>> {
+        jsonrpc!("get_fee_rate_statistics", self, Option<FeeRateStatistics>).boxed()
+    }
+
+    pub fn send_transaction(
+        &self,
+        tx: Transaction,
+        outputs_validator: Option<OutputsValidator>,
+    ) -> Rpc<H256> {
+        jsonrpc!("send_transaction", self, H256, outputs_validator, tx).boxed()
     }
 }

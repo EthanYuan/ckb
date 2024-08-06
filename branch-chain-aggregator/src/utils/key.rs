@@ -20,7 +20,9 @@ use std::path::PathBuf;
 const SIGHASH_TYPE_HASH: H256 =
     h256!("0x9bd7e06f3ecf4be0f2fcd2188b23f1b9fcc88e5d4b65a8637b17723bbda3cce8");
 
-pub(crate) fn get_sighash_script_from_privkey(key_path: PathBuf) -> Result<Script, Error> {
+pub(crate) fn get_sighash_script_from_privkey(
+    key_path: PathBuf,
+) -> Result<(Script, secp256k1::SecretKey), Error> {
     let pk = parse_file_to_h256(key_path).map_err(|e| Error::BinaryFileReadError(e.to_string()))?;
     let secret_key =
         secp256k1::SecretKey::from_slice(&pk).expect("impossible: fail to build secret key");
@@ -35,7 +37,7 @@ pub(crate) fn get_sighash_script_from_privkey(key_path: PathBuf) -> Result<Scrip
         .hash_type(ScriptHashType::Type.into())
         .args(args.pack())
         .build();
-    Ok(script)
+    Ok((script, secret_key))
 }
 
 fn parse_file_to_h256(path: PathBuf) -> Result<Vec<u8>, Error> {

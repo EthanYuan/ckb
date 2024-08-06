@@ -13,6 +13,9 @@ pub struct AggregatorConfig {
     /// which will be realized through AggregatorConfig::adjust.
     #[serde(default)]
     pub store: PathBuf,
+    /// RGB++ CKB provider key path
+    #[serde(default)]
+    pub rgbpp_ckb_provider_key_path: PathBuf,
     /// RGB++ queue cell lock key path
     #[serde(default)]
     pub rgbpp_queue_lock_key_path: PathBuf,
@@ -49,6 +52,7 @@ impl Default for AggregatorConfig {
         AggregatorConfig {
             store: PathBuf::new(),
             rgbpp_uri: "http://127.0.0.1:8114".to_string(),
+            rgbpp_ckb_provider_key_path: PathBuf::new(),
             rgbpp_queue_lock_key_path: PathBuf::new(),
             rgbpp_custodian_lock_key_path: PathBuf::new(),
             capacity_asset_id: Bytes::default(),

@@ -221,6 +221,7 @@ block_uncles_cache_size    = 30
 [aggregator]
 # RGB++ uri
 rgbpp_uri = "https://testnet.ckb.dev"
+# rgbpp_ckb_provider_key_path = "./rgbpp_key"
 # rgbpp_queue_lock_key_path = "./rgbpp_key"
 # rgbpp_custodian_lock_key_path = "./rgbpp_key"
 # # Branch Chain

@@ -1,11 +1,9 @@
 //! Branch Chain Aggregator
 
-pub(crate) mod client;
 pub(crate) mod error;
 pub(crate) mod schemas;
 pub(crate) mod utils;
 
-use crate::client::RpcClient;
 use crate::error::Error;
 use crate::utils::{
     decode_udt_amount, encode_udt_amount, get_sighash_script_from_privkey, REQUEST_LOCK, SECP256K1,
@@ -13,18 +11,12 @@ use crate::utils::{
 };
 
 use ckb_app_config::{AggregatorConfig, ScriptConfig};
-use ckb_async_runtime::{
-    tokio::{
-        self,
-        time::{self, interval, Duration},
-    },
-    Handle,
-};
 use ckb_jsonrpc_types::TransactionView;
-use ckb_logger::{error, info, warn};
+use ckb_logger::{info, warn};
 use ckb_sdk::{
     core::TransactionBuilder,
-    rpc::ckb_indexer::Cell,
+    rpc::ckb_indexer::{Cell, Order},
+    rpc::CkbRpcClient as RpcClient,
     traits::{CellQueryOptions, MaturityOption, PrimaryScriptType, QueryOrder},
     transaction::{
         builder::{ChangeBuilder, DefaultChangeBuilder},
@@ -55,6 +47,7 @@ use utils::QUEUE_TYPE;
 
 use std::collections::HashMap;
 use std::thread;
+use std::time::Duration;
 
 const THREAD_NAME: &str = "Aggregator";
 const CKB_FEE_RATE_LIMIT: u64 = 5000;
@@ -64,7 +57,6 @@ const CKB_FEE_RATE_LIMIT: u64 = 5000;
 pub struct Aggregator {
     chain_id: String,
     config: AggregatorConfig,
-    async_handle: Handle,
     poll_interval: Duration,
     rpc_client: RpcClient,
     rgbpp_scripts: HashMap<String, ScriptInfo>,
@@ -72,7 +64,7 @@ pub struct Aggregator {
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
-pub struct ScriptInfo {
+struct ScriptInfo {
     pub script: Script,
     pub cell_dep: CellDep,
 }
@@ -86,57 +78,16 @@ enum RequestType {
 
 impl Aggregator {
     /// Create an Aggregator
-    pub fn new(
-        config: AggregatorConfig,
-        async_handle: Handle,
-        poll_interval: Duration,
-        chain_id: String,
-    ) -> Self {
+    pub fn new(config: AggregatorConfig, poll_interval: Duration, chain_id: String) -> Self {
         let rpc_client = RpcClient::new(&config.rgbpp_uri);
         Aggregator {
             chain_id,
             config: config.clone(),
-            async_handle,
             poll_interval,
             rpc_client,
             rgbpp_scripts: get_script_map(config.rgbpp_scripts.clone()),
             _branch_scripts: get_script_map(config.branch_scripts.clone()),
         }
-    }
-
-    /// Run the Aggregator
-    pub fn start(&self) {
-        info!("chain id: {}", self.chain_id);
-
-        // Setup cancellation token
-        let stop: CancellationToken = new_tokio_exit_rx();
-        let poll_interval = self.poll_interval;
-        let poll_service: Aggregator = self.clone();
-
-        self.async_handle.spawn(async move {
-            if stop.is_cancelled() {
-                info!("Aggregator received exit signal, exit now");
-                return;
-            }
-
-            let mut interval = interval(poll_interval);
-            interval.set_missed_tick_behavior(time::MissedTickBehavior::Skip);
-
-            loop {
-                tokio::select! {
-                    _ = interval.tick() => {
-                        let service = poll_service.clone();
-                        if let Err(e) = service.scan_rgbpp_request().await {
-                            error!("Aggregator Error: {:?}", e);
-                        }
-                    }
-                    _ = stop.cancelled() => {
-                        info!("Aggregator received exit signal, exiting now");
-                        break;
-                    },
-                }
-            }
-        });
     }
 
     /// Run the Aggregator
@@ -166,7 +117,9 @@ impl Aggregator {
                         }
                     }
 
-                    poll_service.scan_rgbpp_request();
+                    if let Err(e) = poll_service.scan_rgbpp_request() {
+                        info!("Aggregator: {:?}", e);
+                    }
 
                     thread::sleep(poll_interval);
                 }
@@ -175,7 +128,7 @@ impl Aggregator {
         register_thread(THREAD_NAME, aggregator_jh);
     }
 
-    async fn scan_rgbpp_request(&self) -> Result<(), Error> {
+    fn scan_rgbpp_request(&self) -> Result<(), Error> {
         info!("Scan RGB++ Request ...");
 
         let stop: CancellationToken = new_tokio_exit_rx();
@@ -192,8 +145,12 @@ impl Aggregator {
 
             let request_cells = self
                 .rpc_client
-                .get_cells(request_search_option.clone().into(), limit, cursor)
-                .await
+                .get_cells(
+                    request_search_option.clone().into(),
+                    Order::Asc,
+                    limit.into(),
+                    cursor,
+                )
                 .map_err(|e| Error::LiveCellNotFound(e.to_string()))?;
 
             if request_cells.objects.is_empty() {
@@ -204,8 +161,12 @@ impl Aggregator {
 
             info!("Found {} request cells", request_cells.objects.len());
             let cells_with_messge = self.check_request(request_cells.objects.clone());
-            info!("Found {} valid request cells", cells_with_messge.len());
-            self.create_custodian_tx(cells_with_messge).await?;
+            if cells_with_messge.is_empty() {
+                info!("No valid request cells");
+                break;
+            }
+
+            self.create_custodian_tx(cells_with_messge)?;
             self.create_leap_tx();
             self.create_update_rgbpp_queue_tx();
         }
@@ -220,7 +181,7 @@ impl Aggregator {
 
     fn build_message_queue_cell_search_option(&self) -> Result<CellQueryOptions, Error> {
         let message_queue_type = self.get_rgbpp_script(QUEUE_TYPE)?;
-        let (message_queue_lock, message_queue_key) =
+        let (message_queue_lock, _) =
             get_sighash_script_from_privkey(self.config.rgbpp_queue_lock_key_path.clone())?;
 
         let cell_query_option = CellQueryOptions {
@@ -261,7 +222,7 @@ impl Aggregator {
                                     let check_message = cell
                                         .clone()
                                         .output_data
-                                        .and_then(|data| decode_udt_amount(&data.as_bytes()))
+                                        .and_then(|data| decode_udt_amount(data.as_bytes()))
                                         .map_or(false, |amount| transfer_amount <= amount);
                                     (check_message, transfer)
                                 }
@@ -285,16 +246,12 @@ impl Aggregator {
             .collect()
     }
 
-    async fn create_custodian_tx(
-        &self,
-        request_cells: Vec<(Cell, Transfer)>,
-    ) -> Result<H256, Error> {
+    fn create_custodian_tx(&self, request_cells: Vec<(Cell, Transfer)>) -> Result<H256, Error> {
         // get queue cell
         let queue_cell_search_option = self.build_message_queue_cell_search_option()?;
         let queue_cell = self
             .rpc_client
-            .get_cells(queue_cell_search_option.into(), 1, None)
-            .await
+            .get_cells(queue_cell_search_option.into(), Order::Asc, 1.into(), None)
             .map_err(|e| Error::LiveCellNotFound(e.to_string()))?;
         if queue_cell.objects.len() != 1 {
             return Err(Error::LiveCellNotFound(
@@ -325,10 +282,10 @@ impl Aggregator {
             requests.push(request);
         }
         let queue = CrossChainQueue::from_slice(
-            &queue_cell
+            queue_cell
                 .output_data
                 .as_ref()
-                .ok_or_else(|| Error::QueueCellDataDecodeError)?
+                .ok_or(Error::QueueCellDataDecodeError)?
                 .as_bytes(),
         )
         .map_err(|_| Error::QueueCellDataDecodeError)?;
@@ -421,7 +378,7 @@ impl Aggregator {
 
         // balance transaction
         let network_info = NetworkInfo::new(NetworkType::Testnet, self.config.rgbpp_uri.clone());
-        let fee_rate = self.fee_rate().await?;
+        let fee_rate = self.fee_rate()?;
         let configuration = {
             let mut config =
                 TransactionBuilderConfiguration::new_with_network(network_info.clone())
@@ -499,7 +456,7 @@ impl Aggregator {
             check_result
         }
         .ok_or_else(|| {
-            let msg = format!("live cells are not enough");
+            let msg = "live cells are not enough".to_string();
             Error::Other(msg)
         })?;
 
@@ -515,12 +472,12 @@ impl Aggregator {
 
         // send tx
         let tx_json = TransactionView::from(tx_with_groups.get_tx_view().clone());
-        // let tx_hash = self
-        //     .rpc_client
-        //     .send_transaction(tx_json.inner, None)
-        //     .await?;
+        let tx_hash = self
+            .rpc_client
+            .send_transaction(tx_json.inner, None)
+            .map_err(|e| Error::TransactionSendError(format!("send transaction error: {}", e)))?;
 
-        Ok(H256::default())
+        Ok(tx_hash)
     }
 
     fn create_leap_tx(&self) {
@@ -531,40 +488,40 @@ impl Aggregator {
         // TODO
     }
 
-    pub fn get_rgbpp_cell_dep(&self, script_name: &str) -> Result<CellDep, Error> {
+    fn get_rgbpp_cell_dep(&self, script_name: &str) -> Result<CellDep, Error> {
         self.rgbpp_scripts
             .get(script_name)
             .map(|script_info| script_info.cell_dep.clone())
             .ok_or_else(|| Error::MissingScriptInfo(script_name.to_string()))
     }
 
-    pub fn get_branch_cell_dep(&self, script_name: &str) -> Result<CellDep, Error> {
+    fn _get_branch_cell_dep(&self, script_name: &str) -> Result<CellDep, Error> {
         self._branch_scripts
             .get(script_name)
             .map(|script_info| script_info.cell_dep.clone())
             .ok_or_else(|| Error::MissingScriptInfo(script_name.to_string()))
     }
 
-    pub fn get_rgbpp_script(&self, script_name: &str) -> Result<Script, Error> {
+    fn get_rgbpp_script(&self, script_name: &str) -> Result<Script, Error> {
         self.rgbpp_scripts
             .get(script_name)
             .map(|script_info| script_info.script.clone())
             .ok_or_else(|| Error::MissingScriptInfo(script_name.to_string()))
     }
 
-    pub fn get_branch_script(&self, script_name: &str) -> Result<Script, Error> {
+    fn _get_branch_script(&self, script_name: &str) -> Result<Script, Error> {
         self._branch_scripts
             .get(script_name)
             .map(|script_info| script_info.script.clone())
             .ok_or_else(|| Error::MissingScriptInfo(script_name.to_string()))
     }
 
-    async fn fee_rate(&self) -> Result<u64, Error> {
+    fn fee_rate(&self) -> Result<u64, Error> {
         let value = {
             let dynamic = self
                 .rpc_client
-                .dynamic_fee_rate()
-                .await?
+                .get_fee_rate_statistics(None)
+                .map_err(|e| Error::RpcError(format!("get dynamic fee rate error: {}", e)))?
                 .ok_or_else(|| Error::RpcError("get dynamic fee rate error: None".to_string()))
                 .map(|resp| resp.median)
                 .map(Into::into)
@@ -586,8 +543,7 @@ impl Aggregator {
     }
 }
 
-/// Get scripts map.
-pub fn get_script_map(scripts: Vec<ScriptConfig>) -> HashMap<String, ScriptInfo> {
+fn get_script_map(scripts: Vec<ScriptConfig>) -> HashMap<String, ScriptInfo> {
     scripts
         .iter()
         .map(|s| {

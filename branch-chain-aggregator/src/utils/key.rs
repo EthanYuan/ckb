@@ -11,7 +11,6 @@ use ckb_types::{
     prelude::{Builder, Entity, Pack},
     H256,
 };
-use secp256k1;
 
 use std::fs::File;
 use std::io::Read;
@@ -41,7 +40,7 @@ pub(crate) fn get_sighash_script_from_privkey(
 }
 
 fn parse_file_to_h256(path: PathBuf) -> Result<Vec<u8>, Error> {
-    let mut file = File::open(&path).map_err(|e| Error::BinaryFileReadError(e.to_string()))?;
+    let mut file = File::open(path).map_err(|e| Error::BinaryFileReadError(e.to_string()))?;
     let mut data = vec![];
     file.read_to_end(&mut data)
         .map_err(|e| Error::BinaryFileReadError(e.to_string()))?;

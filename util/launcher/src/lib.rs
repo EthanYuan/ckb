@@ -407,7 +407,6 @@ impl Launcher {
         let aggregator_config = self.args.config.aggregator.clone();
         let aggregator = Aggregator::new(
             aggregator_config,
-            shared.async_handle().clone(),
             Duration::from_secs(2),
             shared.consensus().identify_name(),
         );

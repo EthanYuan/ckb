@@ -2,8 +2,6 @@
 #[derive(thiserror::Error, Debug)]
 #[repr(i32)]
 pub enum Error {
-    #[error("json rpc request error")]
-    JsonRpcRequestError,
     #[error("live cell not found: {0}")]
     LiveCellNotFound(String),
     #[error("binary file read error: {0}")]

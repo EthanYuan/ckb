@@ -36,7 +36,9 @@ use ckb_sdk::{
     types::{NetworkInfo, NetworkType, TransactionWithScriptGroups},
     ScriptGroup,
 };
-use ckb_stop_handler::{new_tokio_exit_rx, CancellationToken};
+use ckb_stop_handler::{
+    new_crossbeam_exit_rx, new_tokio_exit_rx, register_thread, CancellationToken,
+};
 use ckb_types::{
     bytes::Bytes,
     core::FeeRate,
@@ -52,7 +54,9 @@ use schemas::leap::{
 use utils::QUEUE_TYPE;
 
 use std::collections::HashMap;
+use std::thread;
 
+const THREAD_NAME: &str = "Aggregator";
 const CKB_FEE_RATE_LIMIT: u64 = 5000;
 
 ///
@@ -101,7 +105,7 @@ impl Aggregator {
     }
 
     /// Run the Aggregator
-    pub fn run(&self) {
+    pub fn start(&self) {
         info!("chain id: {}", self.chain_id);
 
         // Setup cancellation token
@@ -133,6 +137,42 @@ impl Aggregator {
                 }
             }
         });
+    }
+
+    /// Run the Aggregator
+    pub fn run(&self) {
+        info!("chain id: {}", self.chain_id);
+
+        // Setup cancellation token
+        let stop_rx = new_crossbeam_exit_rx();
+        let poll_interval = self.poll_interval;
+        let poll_service: Aggregator = self.clone();
+
+        let aggregator_jh = thread::Builder::new()
+            .name(THREAD_NAME.into())
+            .spawn(move || {
+                loop {
+                    match stop_rx.try_recv() {
+                        Ok(_) => {
+                            info!("Aggregator received exit signal, stopped");
+                            break;
+                        }
+                        Err(crossbeam_channel::TryRecvError::Empty) => {
+                            // No exit signal, continue execution
+                        }
+                        Err(_) => {
+                            info!("Error receiving exit signal");
+                            break;
+                        }
+                    }
+
+                    poll_service.scan_rgbpp_request();
+
+                    thread::sleep(poll_interval);
+                }
+            })
+            .expect("Start aggregator failed!");
+        register_thread(THREAD_NAME, aggregator_jh);
     }
 
     async fn scan_rgbpp_request(&self) -> Result<(), Error> {
@@ -475,12 +515,12 @@ impl Aggregator {
 
         // send tx
         let tx_json = TransactionView::from(tx_with_groups.get_tx_view().clone());
-        let tx_hash = self
-            .rpc_client
-            .send_transaction(tx_json.inner, None)
-            .await?;
+        // let tx_hash = self
+        //     .rpc_client
+        //     .send_transaction(tx_json.inner, None)
+        //     .await?;
 
-        Ok(tx_hash)
+        Ok(H256::default())
     }
 
     fn create_leap_tx(&self) {

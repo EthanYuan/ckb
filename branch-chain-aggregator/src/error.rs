@@ -18,6 +18,8 @@ pub enum Error {
     TransactionSendError(String),
     #[error("rpc error: {0}")]
     RpcError(String),
+    #[error("Timeout: {0}")]
+    TimedOut(String),
     #[error("other error: {0}")]
     Other(String),
 }

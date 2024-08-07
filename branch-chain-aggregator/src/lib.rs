@@ -206,12 +206,15 @@ impl Aggregator {
         cells
             .into_iter()
             .filter_map(|cell| {
-                RequestLockArgs::from_slice(cell.output.lock.args.as_bytes())
+                let args = PackedBytes::from_slice(cell.output.lock.args.as_bytes()).unwrap();
+                RequestLockArgs::from_slice(&args.raw_data())
                     .ok()
                     .and_then(|args| {
                         let target_request_type_hash = args.request_type_hash();
+                        info!("target_request_type_hash: {:?}", target_request_type_hash);
                         let content = args.content();
-                        let target_chain_id = content.target_chain_id().as_bytes();
+                        let target_chain_id: Bytes = content.target_chain_id().as_bytes();
+                        info!("target_chain_id: {:?}", target_chain_id);
                         let request_type = content.request_type();
                         let message = content.message();
                         let (check_message, transfer) = {
@@ -228,12 +231,13 @@ impl Aggregator {
                                 }
                             }
                         };
+                        info!("transfer: {:?}", transfer.amount());
                         let request_type_hash = self
                             .rgbpp_scripts
                             .get(QUEUE_TYPE)
                             .map(|script_info| script_info.script.calc_script_hash());
                         if Some(target_request_type_hash) == request_type_hash
-                            && self.chain_id.clone() == target_chain_id
+                            // && self.chain_id.clone() == target_chain_id
                             && request_type == Byte::new(RequestType::CkbToBranch as u8)
                             && check_message
                         {
@@ -254,9 +258,10 @@ impl Aggregator {
             .get_cells(queue_cell_search_option.into(), Order::Asc, 1.into(), None)
             .map_err(|e| Error::LiveCellNotFound(e.to_string()))?;
         if queue_cell.objects.len() != 1 {
-            return Err(Error::LiveCellNotFound(
-                "Message queue cell not found".to_string(),
-            ));
+            return Err(Error::LiveCellNotFound(format!(
+                "Queue cell found: {}",
+                queue_cell.objects.len()
+            )));
         }
         let queue_cell = queue_cell.objects[0].clone();
 

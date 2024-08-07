@@ -221,13 +221,11 @@ block_uncles_cache_size    = 30
 [aggregator]
 # RGB++ uri
 rgbpp_uri = "https://testnet.ckb.dev"
-# rgbpp_ckb_provider_key_path = "./rgbpp_key"
-# rgbpp_queue_lock_key_path = "./rgbpp_key"
-# rgbpp_custodian_lock_key_path = "./rgbpp_key"
-# # Branch Chain
-# # Leap tx determines whether mint capacity or xudt
-# capacity_asset_id = "0x"
-# branch_chain_token_manager_lock_key_path = "./branch_chain_key"
+rgbpp_ckb_provider_key_path = "../dev/rgbpp_ckb_provider_key"
+rgbpp_queue_lock_key_path = "../dev/rgbpp_queue_lock_key"
+rgbpp_custodian_lock_key_path = "../dev/rgbpp_custodian_lock_key"
+# Branch Chain
+branch_chain_token_manager_lock_key_path = "../dev/branch_chain_token_manager_key"
 
 [[aggregator.rgbpp_scripts]]
 script_name = "secp256k1_blake160"
@@ -267,40 +265,40 @@ cell_dep = '''
 }
 '''
 
-# [[aggregator.rgbpp_scripts]]
-# script_name = "request_lock"
-# script = '''
-# {
-#     "args": "0x",
-#     "code_hash": "0x0000000000000000000000000000000000000000000000000000000000000000",
-#     "hash_type": "type"
-# }
-# '''
-# cell_dep = '''
-# {
-#     "dep_type": "code",
-#     "out_point": {
-#         "index": "0x0",
-#         "tx_hash": "0x0000000000000000000000000000000000000000000000000000000000000000"
-#     }
-# }
-# '''
+[[aggregator.rgbpp_scripts]]
+script_name = "request_lock"
+script = '''
+{
+    "args": "0x",
+    "code_hash": "0x2fca96b423bd2b4d0d4b5098bf7a3e74ea42c3f2e1bb6f973f7c1c68adfa3d9c",
+    "hash_type": "type"
+}
+'''
+cell_dep = '''
+{
+    "dep_type": "code",
+    "out_point": {
+        "index": "0x0",
+        "tx_hash": "0x79e7a69cf175cde1d8f4fd1f7f5c9792cf07b4099a4a75946393ac6616b7aa0b"
+    }
+}
+'''
 
-# [[aggregator.rgbpp_scripts]]
-# script_name = "queue_type"
-# script = '''
-# {
-#     "args": "0x",
-#     "code_hash": "0x0000000000000000000000000000000000000000000000000000000000000000",
-#     "hash_type": "type"
-# }
-# '''
-# cell_dep = '''
-# {
-#     "dep_type": "code",
-#     "out_point": {
-#         "index": "0x0",
-#         "tx_hash": "0x0000000000000000000000000000000000000000000000000000000000000000"
-#     }
-# }
-# '''
+[[aggregator.rgbpp_scripts]]
+script_name = "queue_type"
+script = '''
+{
+    "args": "0x4242",
+    "code_hash": "0x2da1e80cec3e553a76e22d826b63ce5f65d77622de48caa5a2fe724b0f9a18f2",
+    "hash_type": "type"
+}
+'''
+cell_dep = '''
+{
+    "dep_type": "code",
+    "out_point": {
+        "index": "0x0",
+        "tx_hash": "0xeb4614bc1d8b2aadb928758c77a07720f1794418d0257a61bac94240d4c21905"
+    }
+}
+'''

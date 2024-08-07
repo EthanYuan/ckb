@@ -1,4 +1,3 @@
-use ckb_types::bytes::Bytes;
 use serde::{Deserialize, Serialize};
 
 use std::path::{Path, PathBuf};
@@ -22,9 +21,6 @@ pub struct AggregatorConfig {
     /// RGB++ custodian lock key path
     #[serde(default)]
     pub rgbpp_custodian_lock_key_path: PathBuf,
-    /// Capacity asset id
-    #[serde(default)]
-    pub capacity_asset_id: Bytes,
     /// RGB++ branch chain token manager lock key path
     #[serde(default)]
     pub branch_chain_token_manager_lock_key_path: PathBuf,
@@ -55,7 +51,6 @@ impl Default for AggregatorConfig {
             rgbpp_ckb_provider_key_path: PathBuf::new(),
             rgbpp_queue_lock_key_path: PathBuf::new(),
             rgbpp_custodian_lock_key_path: PathBuf::new(),
-            capacity_asset_id: Bytes::default(),
             branch_chain_token_manager_lock_key_path: PathBuf::new(),
             rgbpp_scripts: Vec::new(),
             branch_scripts: Vec::new(),

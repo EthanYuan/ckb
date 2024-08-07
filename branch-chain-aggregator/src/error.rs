@@ -6,8 +6,8 @@ pub enum Error {
     LiveCellNotFound(String),
     #[error("binary file read error: {0}")]
     BinaryFileReadError(String),
-    #[error("error while decoding queue cell data")]
-    QueueCellDataDecodeError,
+    #[error("error while decoding queue cell data: {0}")]
+    QueueCellDataDecodeError(String),
     #[error("missing script info: {0}")]
     MissingScriptInfo(String),
     #[error("transaction build error: {0}")]

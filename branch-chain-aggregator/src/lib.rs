@@ -12,7 +12,8 @@ use crate::utils::{
 
 use ckb_app_config::{AggregatorConfig, ScriptConfig};
 use ckb_jsonrpc_types::TransactionView;
-use ckb_logger::{info, warn};
+use ckb_logger::{debug, info, warn};
+use ckb_sdk::traits::LiveCell;
 use ckb_sdk::{
     core::TransactionBuilder,
     rpc::ckb_indexer::{Cell, Order},
@@ -161,8 +162,8 @@ impl Aggregator {
 
             info!("Found {} request cells", request_cells.objects.len());
             let cells_with_messge = self.check_request(request_cells.objects.clone());
+            info!("Found {} valid request cells", cells_with_messge.len());
             if cells_with_messge.is_empty() {
-                info!("No valid request cells");
                 break;
             }
 
@@ -206,8 +207,8 @@ impl Aggregator {
         cells
             .into_iter()
             .filter_map(|cell| {
-                let args = PackedBytes::from_slice(cell.output.lock.args.as_bytes()).unwrap();
-                RequestLockArgs::from_slice(&args.raw_data())
+                let live_cell: LiveCell = cell.clone().into();
+                RequestLockArgs::from_slice(&live_cell.output.lock().args().raw_data())
                     .ok()
                     .and_then(|args| {
                         let target_request_type_hash = args.request_type_hash();
@@ -263,6 +264,7 @@ impl Aggregator {
                 queue_cell.objects.len()
             )));
         }
+        info!("Found {} queue cell", queue_cell.objects.len());
         let queue_cell = queue_cell.objects[0].clone();
 
         // build new queue
@@ -286,14 +288,16 @@ impl Aggregator {
             request_ids.push(request_id);
             requests.push(request);
         }
-        let queue = CrossChainQueue::from_slice(
-            queue_cell
-                .output_data
-                .as_ref()
-                .ok_or(Error::QueueCellDataDecodeError)?
-                .as_bytes(),
-        )
-        .map_err(|_| Error::QueueCellDataDecodeError)?;
+        let queue_data = queue_cell
+            .clone()
+            .output_data
+            .ok_or(Error::QueueCellDataDecodeError(
+                "Queue cell output data is empty".to_string(),
+            ))?;
+        let queue_data = PackedBytes::from_slice(queue_data.as_bytes())
+            .map_err(|e| Error::QueueCellDataDecodeError(e.to_string()))?;
+        let queue = CrossChainQueue::from_slice(&queue_data.raw_data())
+            .map_err(|e| Error::QueueCellDataDecodeError(e.to_string()))?;
         let existing_outbox = queue.outbox().as_builder().extend(request_ids).build();
         let queue_data = queue.as_builder().outbox(existing_outbox).build();
         let queue_witness = Requests::new_builder().set(requests).build();
@@ -348,7 +352,8 @@ impl Aggregator {
                     .build()
                     .as_bytes()
                     .pack(),
-            );
+            )
+            .witnesses(vec![PackedBytes::default(); request_cells.len()]);
 
         // group
         #[allow(clippy::mutable_key_type)]
@@ -397,17 +402,17 @@ impl Aggregator {
             DefaultChangeBuilder::new(&configuration, capacity_provider_script.clone(), Vec::new());
         change_builder.init(&mut tx_builder);
         {
-            let spv_info_input = TransactionInput {
+            let queue_cell_input = TransactionInput {
                 live_cell: queue_cell.clone().into(),
                 since: 0,
             };
-            let _ = change_builder.check_balance(spv_info_input, &mut tx_builder);
+            let _ = change_builder.check_balance(queue_cell_input, &mut tx_builder);
             for (cell, _) in &request_cells {
-                let input = TransactionInput {
+                let request_input = TransactionInput {
                     live_cell: cell.to_owned().into(),
                     since: 0,
                 };
-                let _ = change_builder.check_balance(input, &mut tx_builder);
+                let _ = change_builder.check_balance(request_input, &mut tx_builder);
             }
         };
         let contexts = HandlerContexts::default();
@@ -415,7 +420,7 @@ impl Aggregator {
         let mut tx_with_groups = {
             let mut check_result = None;
             for (mut input_index, input) in iterator.enumerate() {
-                input_index += 1 + request_cells.len(); // info + stale clients
+                input_index += 1 + request_cells.len(); // queue cell + request cells
                 let input = input.map_err(|err| {
                     let msg = format!("failed to find {input_index}-th live cell since {err}");
                     Error::Other(msg)
@@ -477,6 +482,10 @@ impl Aggregator {
 
         // send tx
         let tx_json = TransactionView::from(tx_with_groups.get_tx_view().clone());
+        debug!(
+            "custodian tx: {}",
+            serde_json::to_string_pretty(&tx_json).unwrap()
+        );
         let tx_hash = self
             .rpc_client
             .send_transaction(tx_json.inner, None)

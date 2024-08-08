@@ -38,10 +38,10 @@ pub struct AggregatorConfig {
     pub branch_scripts: Vec<ScriptConfig>,
     /// Asset configs
     #[serde(default)]
-    pub rgbpp_asset_configs: Vec<AssetConfig>,
+    pub rgbpp_assets: Vec<AssetConfig>,
     /// Lock configs
     #[serde(default)]
-    pub rgbpp_lock_configs: Vec<LockConfig>,
+    pub rgbpp_asset_locks: Vec<LockConfig>,
 }
 
 /// Script config options.
@@ -59,7 +59,7 @@ pub struct ScriptConfig {
 #[derive(Serialize, Deserialize, Default, Clone, Debug)]
 pub struct AssetConfig {
     /// Script name
-    pub script_name: String,
+    pub asset_name: String,
     /// Is capacity
     pub is_capacity: bool,
     /// Asset ID
@@ -90,8 +90,8 @@ impl Default for AggregatorConfig {
             branch_chain_token_manager_lock_key_path: PathBuf::new(),
             rgbpp_scripts: Vec::new(),
             branch_scripts: Vec::new(),
-            rgbpp_asset_configs: Vec::new(),
-            rgbpp_lock_configs: Vec::new(),
+            rgbpp_assets: Vec::new(),
+            rgbpp_asset_locks: Vec::new(),
         }
     }
 }

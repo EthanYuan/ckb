@@ -17,7 +17,6 @@ use crate::utils::{
 
 use ckb_app_config::{AggregatorConfig, AssetConfig, LockConfig, ScriptConfig};
 use ckb_logger::{error, info, warn};
-use ckb_sdk::rpc::ResponseFormatGetter;
 use ckb_sdk::traits::LiveCell;
 use ckb_sdk::{
     rpc::ckb_indexer::{Cell, Order},
@@ -27,7 +26,6 @@ use ckb_sdk::{
 use ckb_stop_handler::{
     new_crossbeam_exit_rx, new_tokio_exit_rx, register_thread, CancellationToken,
 };
-use ckb_types::packed::{Transaction, WitnessArgs};
 use ckb_types::H256;
 use ckb_types::{
     bytes::Bytes,
@@ -92,8 +90,8 @@ impl Aggregator {
             branch_rpc_client,
             rgbpp_scripts: get_script_map(config.rgbpp_scripts),
             branch_scripts: get_script_map(config.branch_scripts),
-            rgbpp_assets: get_asset_map(config.rgbpp_asset_configs),
-            rgbpp_locks: get_rgbpp_locks(config.rgbpp_lock_configs),
+            rgbpp_assets: get_asset_map(config.rgbpp_assets),
+            rgbpp_locks: get_rgbpp_locks(config.rgbpp_asset_locks),
         }
     }
 
@@ -268,34 +266,8 @@ impl Aggregator {
         let request_ids: Vec<Byte32> = queue_cell_data.outbox().into_iter().collect();
 
         let queue_out_point = queue_cell.out_point.clone();
-        let tx_hash = queue_cell.out_point.tx_hash;
-        let index: u32 = queue_cell.out_point.index.into();
-        let tx = self
-            .rgbpp_rpc_client
-            .get_transaction(tx_hash.clone())
-            .map_err(|e| Error::RpcError(format!("get transaction error: {}", e.to_string())))?
-            .ok_or(Error::RpcError("get transaction error: None".to_string()))?
-            .transaction
-            .ok_or(Error::RpcError("get transaction error: None".to_string()))?
-            .get_value()
-            .map_err(|e| Error::RpcError(format!("get transaction error: {}", e.to_string())))?
-            .inner;
-        let tx: Transaction = tx.into();
-        let witness = tx
-            .witnesses()
-            .get(index as usize)
-            .ok_or(Error::TransactionParseError(
-                "get witness error: None".to_string(),
-            ))?;
-        let witness_input_type = WitnessArgs::from_slice(&witness.raw_data())
-            .map_err(|e| {
-                Error::TransactionParseError(format!("get witness error: {}", e.to_string()))
-            })?
-            .input_type()
-            .to_opt()
-            .ok_or(Error::TransactionParseError(
-                "get witness input type error: None".to_string(),
-            ))?;
+        let (_, witness_input_type) =
+            self.get_tx_witness_input_type(queue_cell.out_point, self.rgbpp_rpc_client.clone())?;
         let requests = Requests::from_slice(&witness_input_type.raw_data()).map_err(|e| {
             Error::TransactionParseError(format!(
                 "get requests from witness error: {}",
@@ -496,7 +468,7 @@ fn get_asset_map(asset_configs: Vec<AssetConfig>) -> HashMap<H256, AssetInfo> {
             let script = serde_json::from_str::<ckb_jsonrpc_types::Script>(&asset_config.script)
                 .expect("config string to script")
                 .into();
-            let script_name = asset_config.script_name.clone();
+            let script_name = asset_config.asset_name.clone();
             let is_capacity = asset_config.is_capacity && !is_capacity_found;
             if is_capacity {
                 is_capacity_found = true;

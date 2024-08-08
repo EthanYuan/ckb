@@ -26,6 +26,10 @@ pub enum Error {
     RpcError(String),
     #[error("Timeout: {0}")]
     TimedOut(String),
+    #[error("Lock not found: {0}")]
+    LockNotFound(String),
+    #[error("Branch script not found: {0}")]
+    BranchScriptNotFound(String),
     #[error("other error: {0}")]
     Other(String),
 }

@@ -409,6 +409,7 @@ dependencies = [
  "ckb-stop-handler",
  "ckb-types 0.116.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "crossbeam-channel",
+ "hex",
  "jsonrpc-core",
  "molecule",
  "reqwest 0.12.5",

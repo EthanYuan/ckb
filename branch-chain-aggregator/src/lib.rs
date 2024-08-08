@@ -13,7 +13,7 @@ use crate::utils::{
     XUDT,
 };
 
-use ckb_app_config::{AggregatorConfig, ScriptConfig};
+use ckb_app_config::{AggregatorConfig, AssetConfig, LockConfig, ScriptConfig};
 use ckb_logger::{info, warn};
 use ckb_sdk::traits::LiveCell;
 use ckb_sdk::{
@@ -34,6 +34,7 @@ use ckb_types::{
 use molecule::prelude::Byte;
 
 use std::collections::HashMap;
+use std::str::FromStr;
 use std::thread;
 use std::time::Duration;
 
@@ -48,13 +49,22 @@ pub struct Aggregator {
     poll_interval: Duration,
     rpc_client: RpcClient,
     rgbpp_scripts: HashMap<String, ScriptInfo>,
-    _branch_scripts: HashMap<String, ScriptInfo>,
+    branch_scripts: HashMap<String, ScriptInfo>,
+    rgbpp_assets: HashMap<H256, AssetInfo>,
+    rgbpp_locks: HashMap<H256, Script>,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 struct ScriptInfo {
     pub script: Script,
     pub cell_dep: CellDep,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+struct AssetInfo {
+    pub script: Script,
+    pub is_capacity: bool,
+    pub script_name: String,
 }
 
 #[allow(dead_code)]
@@ -73,8 +83,10 @@ impl Aggregator {
             config: config.clone(),
             poll_interval,
             rpc_client,
-            rgbpp_scripts: get_script_map(config.rgbpp_scripts.clone()),
-            _branch_scripts: get_script_map(config.branch_scripts.clone()),
+            rgbpp_scripts: get_script_map(config.rgbpp_scripts),
+            branch_scripts: get_script_map(config.branch_scripts),
+            rgbpp_assets: get_asset_map(config.rgbpp_asset_configs),
+            rgbpp_locks: get_rgbpp_locks(config.rgbpp_lock_configs),
         }
     }
 
@@ -281,7 +293,7 @@ impl Aggregator {
     }
 
     fn _get_branch_cell_dep(&self, script_name: &str) -> Result<CellDep, Error> {
-        self._branch_scripts
+        self.branch_scripts
             .get(script_name)
             .map(|script_info| script_info.cell_dep.clone())
             .ok_or_else(|| Error::MissingScriptInfo(script_name.to_string()))
@@ -295,7 +307,7 @@ impl Aggregator {
     }
 
     fn _get_branch_script(&self, script_name: &str) -> Result<Script, Error> {
-        self._branch_scripts
+        self.branch_scripts
             .get(script_name)
             .map(|script_info| script_info.script.clone())
             .ok_or_else(|| Error::MissingScriptInfo(script_name.to_string()))
@@ -347,6 +359,46 @@ fn get_script_map(scripts: Vec<ScriptConfig>) -> HashMap<String, ScriptInfo> {
         .collect()
 }
 
+fn get_asset_map(asset_configs: Vec<AssetConfig>) -> HashMap<H256, AssetInfo> {
+    let mut is_capacity_found = false;
+
+    asset_configs
+        .into_iter()
+        .map(|asset_config| {
+            let script = serde_json::from_str::<ckb_jsonrpc_types::Script>(&asset_config.script)
+                .expect("config string to script")
+                .into();
+            let script_name = asset_config.script_name.clone();
+            let is_capacity = asset_config.is_capacity && !is_capacity_found;
+            if is_capacity {
+                is_capacity_found = true;
+            }
+            let asset_id = asset_config.asset_id.clone();
+            (
+                H256::from_str(&asset_id).expect("asset id to h256"),
+                AssetInfo {
+                    script,
+                    is_capacity,
+                    script_name,
+                },
+            )
+        })
+        .collect()
+}
+
+fn get_rgbpp_locks(lock_configs: Vec<LockConfig>) -> HashMap<H256, Script> {
+    lock_configs
+        .iter()
+        .map(|lock_config| {
+            let lock_hash = H256::from_str(&lock_config.lock_hash).expect("lock hash to h256");
+            let script = serde_json::from_str::<ckb_jsonrpc_types::Script>(&lock_config.script)
+                .expect("config string to script")
+                .into();
+            (lock_hash, script)
+        })
+        .collect()
+}
+
 fn wait_for_tx_confirmation(
     _client: RpcClient,
     _tx_hash: H256,
@@ -360,5 +412,37 @@ fn wait_for_tx_confirmation(
                 "Transaction confirmation timed out".to_string(),
             ));
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    use ckb_types::{bytes::Bytes, core::ScriptHashType};
+
+    use std::str::FromStr;
+
+    #[test]
+    fn calc_script() {
+        let code_hash = "00000000000000000000000000000000000000000000000000545950455f4944";
+        let args = "57fdfd0617dcb74d1287bb78a7368a3a4bf9a790cfdcf5c1a105fd7cb406de0d";
+        let script_hash = "6283a479a3cf5d4276cd93594de9f1827ab9b55c7b05b3d28e4c2e0a696cfefd";
+
+        let code_hash = H256::from_str(code_hash).unwrap();
+        let args = Bytes::from(hex::decode(args).unwrap());
+
+        let script = Script::new_builder()
+            .code_hash(code_hash.pack())
+            .hash_type(ScriptHashType::Type.into())
+            .args(args.pack())
+            .build();
+
+        println!("{:?}", script.calc_script_hash());
+
+        assert_eq!(
+            script.calc_script_hash().as_bytes(),
+            Bytes::from(hex::decode(script_hash).unwrap())
+        );
     }
 }

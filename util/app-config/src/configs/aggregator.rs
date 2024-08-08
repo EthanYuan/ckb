@@ -21,7 +21,10 @@ pub struct AggregatorConfig {
     /// RGB++ custodian lock key path
     #[serde(default)]
     pub rgbpp_custodian_lock_key_path: PathBuf,
-    /// RGB++ branch chain token manager lock key path
+    /// Branch Chain capacity provider key path
+    #[serde(default)]
+    pub branch_chain_capacity_provider_key_path: PathBuf,
+    /// Branch Chain token manager lock key path
     #[serde(default)]
     pub branch_chain_token_manager_lock_key_path: PathBuf,
     /// RGB++ scripts
@@ -30,6 +33,12 @@ pub struct AggregatorConfig {
     /// Branch Chain scripts
     #[serde(default)]
     pub branch_scripts: Vec<ScriptConfig>,
+    /// Asset configs
+    #[serde(default)]
+    pub rgbpp_asset_configs: Vec<AssetConfig>,
+    /// Lock configs
+    #[serde(default)]
+    pub rgbpp_lock_configs: Vec<LockConfig>,
 }
 
 /// Script config options.
@@ -43,6 +52,28 @@ pub struct ScriptConfig {
     pub cell_dep: String,
 }
 
+/// Asset config options.
+#[derive(Serialize, Deserialize, Default, Clone, Debug)]
+pub struct AssetConfig {
+    /// Script name
+    pub script_name: String,
+    /// Is capacity
+    pub is_capacity: bool,
+    /// Asset ID
+    pub asset_id: String,
+    /// Script type
+    pub script: String,
+}
+
+/// Lock config options.
+#[derive(Serialize, Deserialize, Default, Clone, Debug)]
+pub struct LockConfig {
+    /// Lock hash
+    pub lock_hash: String,
+    /// Script type
+    pub script: String,
+}
+
 impl Default for AggregatorConfig {
     fn default() -> Self {
         AggregatorConfig {
@@ -51,9 +82,12 @@ impl Default for AggregatorConfig {
             rgbpp_ckb_provider_key_path: PathBuf::new(),
             rgbpp_queue_lock_key_path: PathBuf::new(),
             rgbpp_custodian_lock_key_path: PathBuf::new(),
+            branch_chain_capacity_provider_key_path: PathBuf::new(),
             branch_chain_token_manager_lock_key_path: PathBuf::new(),
             rgbpp_scripts: Vec::new(),
             branch_scripts: Vec::new(),
+            rgbpp_asset_configs: Vec::new(),
+            rgbpp_lock_configs: Vec::new(),
         }
     }
 }

@@ -5,6 +5,7 @@ use ckb_types::H256;
 
 impl Aggregator {
     pub(crate) fn create_leap_tx(&self) -> Result<H256, Error> {
-        todo!()
+        // search queue cell on RGB++
+        Ok(H256::default())
     }
 }

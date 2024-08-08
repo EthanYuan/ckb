@@ -238,12 +238,17 @@ impl Aggregator {
                     .and_then(|args| {
                         let target_request_type_hash = args.request_type_hash();
                         info!("target_request_type_hash: {:?}", target_request_type_hash);
+
+                        let timeout: u64 = args.timeout().unpack();
+                        info!("timeout: {:?}", timeout);
+
                         let content = args.content();
                         let target_chain_id: Bytes = content.target_chain_id().as_bytes();
                         info!("target_chain_id: {:?}", target_chain_id);
                         let request_type = content.request_type();
-                        let message = content.message();
+
                         let (check_message, transfer) = {
+                            let message = content.message();
                             let message_union = message.to_enum();
                             match message_union {
                                 MessageUnion::Transfer(transfer) => {
@@ -263,12 +268,14 @@ impl Aggregator {
                                 }
                             }
                         };
+
                         let request_type_hash = self
                             .rgbpp_scripts
                             .get(QUEUE_TYPE)
                             .map(|script_info| script_info.script.calc_script_hash());
+
                         if Some(target_request_type_hash) == request_type_hash
-                            // && self.chain_id.clone() == target_chain_id
+                            && self.chain_id.clone() == target_chain_id
                             && request_type == Byte::new(RequestType::CkbToBranch as u8)
                             && check_message
                         {

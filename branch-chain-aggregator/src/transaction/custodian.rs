@@ -10,6 +10,7 @@ use crate::{
 
 use ckb_jsonrpc_types::TransactionView;
 use ckb_logger::{debug, info};
+use ckb_sdk::traits::LiveCell;
 use ckb_sdk::{
     core::TransactionBuilder,
     rpc::ckb_indexer::{Cell, Order},
@@ -74,15 +75,10 @@ impl Aggregator {
             request_ids.push(request_id);
             requests.push(request);
         }
-        let queue_data = queue_cell
-            .clone()
-            .output_data
-            .ok_or(Error::QueueCellDataDecodeError(
-                "Queue cell output data is empty".to_string(),
-            ))?;
-        let queue_data = PackedBytes::from_slice(queue_data.as_bytes())
-            .map_err(|e| Error::QueueCellDataDecodeError(e.to_string()))?;
-        let queue = CrossChainQueue::from_slice(&queue_data.raw_data())
+
+        let queue_live_cell: LiveCell = queue_cell.clone().into();
+        let queue_data = queue_live_cell.output_data;
+        let queue = CrossChainQueue::from_slice(&queue_data)
             .map_err(|e| Error::QueueCellDataDecodeError(e.to_string()))?;
         let existing_outbox = queue.outbox().as_builder().extend(request_ids).build();
         let queue_data = queue.as_builder().outbox(existing_outbox).build();
@@ -276,7 +272,7 @@ impl Aggregator {
             .rpc_client
             .send_transaction(tx_json.inner, None)
             .map_err(|e| Error::TransactionSendError(format!("send transaction error: {}", e)))?;
-        info!("custodian tx send: {:?}", tx_hash);
+        info!("custodian tx send: {:?}", tx_hash.pack());
 
         Ok(tx_hash)
     }

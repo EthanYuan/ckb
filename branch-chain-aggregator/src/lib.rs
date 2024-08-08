@@ -32,7 +32,7 @@ use ckb_types::H256;
 use ckb_types::{
     bytes::Bytes,
     core::FeeRate,
-    packed::{Byte32, CellDep, Script},
+    packed::{Byte32, CellDep, OutPoint, Script},
     prelude::*,
 };
 use molecule::prelude::Byte;
@@ -51,7 +51,8 @@ pub struct Aggregator {
     chain_id: String,
     config: AggregatorConfig,
     poll_interval: Duration,
-    rpc_client: RpcClient,
+    rgbpp_rpc_client: RpcClient,
+    branch_rpc_client: RpcClient,
     rgbpp_scripts: HashMap<String, ScriptInfo>,
     branch_scripts: HashMap<String, ScriptInfo>,
     rgbpp_assets: HashMap<H256, AssetInfo>,
@@ -81,12 +82,14 @@ pub(crate) enum RequestType {
 impl Aggregator {
     /// Create an Aggregator
     pub fn new(config: AggregatorConfig, poll_interval: Duration, chain_id: String) -> Self {
-        let rpc_client = RpcClient::new(&config.rgbpp_uri);
+        let rgbpp_rpc_client = RpcClient::new(&config.rgbpp_uri);
+        let branch_rpc_client = RpcClient::new(&config.branch_uri);
         Aggregator {
             chain_id,
             config: config.clone(),
             poll_interval,
-            rpc_client,
+            rgbpp_rpc_client,
+            branch_rpc_client,
             rgbpp_scripts: get_script_map(config.rgbpp_scripts),
             branch_scripts: get_script_map(config.branch_scripts),
             rgbpp_assets: get_asset_map(config.rgbpp_asset_configs),
@@ -122,16 +125,17 @@ impl Aggregator {
                     }
 
                     // get queue data
-                    let rgbpp_queue_cell = poll_service.get_rgbpp_queue_requests();
-                    let rgbpp_queue_cell = match rgbpp_queue_cell {
-                        Ok(rgbpp_queue_cell) => rgbpp_queue_cell,
+                    let rgbpp_requests = poll_service.get_rgbpp_queue_requests();
+                    let (rgbpp_requests, queue_cell) = match rgbpp_requests {
+                        Ok((rgbpp_requests, queue_cell)) => (rgbpp_requests, queue_cell),
                         Err(e) => {
                             error!("get RGB++ queue data error: {}", e.to_string());
                             continue;
                         }
                     };
 
-                    let leap_tx = poll_service.create_leap_tx(rgbpp_queue_cell.clone());
+                    let leap_tx =
+                        poll_service.create_leap_tx(rgbpp_requests.clone(), queue_cell.clone());
                     let leap_tx = match leap_tx {
                         Ok(leap_tx) => leap_tx,
                         Err(e) => {
@@ -140,7 +144,7 @@ impl Aggregator {
                         }
                     };
                     match wait_for_tx_confirmation(
-                        poll_service.rpc_client.clone(),
+                        poll_service.rgbpp_rpc_client.clone(),
                         leap_tx,
                         Duration::from_secs(600),
                     ) {
@@ -149,7 +153,7 @@ impl Aggregator {
                     }
 
                     let update_queue_tx =
-                        poll_service.create_update_rgbpp_queue_tx(rgbpp_queue_cell);
+                        poll_service.create_update_rgbpp_queue_tx(rgbpp_requests, queue_cell);
                     let update_queue_tx = match update_queue_tx {
                         Ok(update_queue_tx) => update_queue_tx,
                         Err(e) => {
@@ -158,7 +162,7 @@ impl Aggregator {
                         }
                     };
                     match wait_for_tx_confirmation(
-                        poll_service.rpc_client.clone(),
+                        poll_service.rgbpp_rpc_client.clone(),
                         update_queue_tx,
                         Duration::from_secs(600),
                     ) {
@@ -192,7 +196,7 @@ impl Aggregator {
             }
 
             let request_cells = self
-                .rpc_client
+                .rgbpp_rpc_client
                 .get_cells(
                     request_search_option.clone().into(),
                     Order::Asc,
@@ -216,7 +220,7 @@ impl Aggregator {
 
             let custodian_tx = self.create_custodian_tx(cells_with_messge)?;
             match wait_for_tx_confirmation(
-                self.rpc_client.clone(),
+                self.rgbpp_rpc_client.clone(),
                 custodian_tx,
                 Duration::from_secs(15),
             ) {
@@ -256,18 +260,19 @@ impl Aggregator {
         Ok(cell_query_option)
     }
 
-    fn get_rgbpp_queue_requests(&self) -> Result<Vec<Request>, Error> {
+    fn get_rgbpp_queue_requests(&self) -> Result<(Vec<Request>, OutPoint), Error> {
         let (queue_cell, queue_cell_data) = self.get_rgbpp_queue_cell()?;
         if queue_cell_data.outbox().is_empty() {
-            return Ok(vec![]);
+            return Ok((vec![], OutPoint::default()));
         }
         let request_ids: Vec<Byte32> = queue_cell_data.outbox().into_iter().collect();
 
+        let queue_out_point = queue_cell.out_point.clone();
         let tx_hash = queue_cell.out_point.tx_hash;
         let index: u32 = queue_cell.out_point.index.into();
         let tx = self
-            .rpc_client
-            .get_transaction(tx_hash)
+            .rgbpp_rpc_client
+            .get_transaction(tx_hash.clone())
             .map_err(|e| Error::RpcError(format!("get transaction error: {}", e.to_string())))?
             .ok_or(Error::RpcError("get transaction error: None".to_string()))?
             .transaction
@@ -307,7 +312,7 @@ impl Aggregator {
             .collect();
         let all_ids_present = request_ids.iter().all(|id| request_set.contains(id));
         if all_ids_present {
-            Ok(requests.into_iter().collect())
+            Ok((requests.into_iter().collect(), queue_out_point.into()))
         } else {
             Err(Error::QueueCellDataError(
                 "Request IDs in queue cell data do not match witness".to_string(),
@@ -320,7 +325,7 @@ impl Aggregator {
 
         let queue_cell_search_option = self.build_message_queue_cell_search_option()?;
         let queue_cell = self
-            .rpc_client
+            .rgbpp_rpc_client
             .get_cells(queue_cell_search_option.into(), Order::Asc, 1.into(), None)
             .map_err(|e| Error::LiveCellNotFound(e.to_string()))?;
         if queue_cell.objects.len() != 1 {
@@ -403,6 +408,7 @@ impl Aggregator {
     fn create_update_rgbpp_queue_tx(
         &self,
         _rgbpp_queue_cells: Vec<Request>,
+        _queue_cell: OutPoint,
     ) -> Result<H256, Error> {
         Ok(H256::default())
     }
@@ -438,7 +444,7 @@ impl Aggregator {
     fn fee_rate(&self) -> Result<u64, Error> {
         let value = {
             let dynamic = self
-                .rpc_client
+                .rgbpp_rpc_client
                 .get_fee_rate_statistics(None)
                 .map_err(|e| Error::RpcError(format!("get dynamic fee rate error: {}", e)))?
                 .ok_or_else(|| Error::RpcError("get dynamic fee rate error: None".to_string()))

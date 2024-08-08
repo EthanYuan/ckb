@@ -257,7 +257,7 @@ impl Aggregator {
             serde_json::to_string_pretty(&tx_json).unwrap()
         );
         let tx_hash = self
-            .rpc_client
+            .rgbpp_rpc_client
             .send_transaction(tx_json.inner, None)
             .map_err(|e| Error::TransactionSendError(format!("send transaction error: {}", e)))?;
         info!("custodian tx send: {:?}", tx_hash.pack());

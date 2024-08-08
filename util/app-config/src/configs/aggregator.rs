@@ -21,6 +21,9 @@ pub struct AggregatorConfig {
     /// RGB++ custodian lock key path
     #[serde(default)]
     pub rgbpp_custodian_lock_key_path: PathBuf,
+    /// Branch Chain URI
+    #[serde(default)]
+    pub branch_uri: String,
     /// Branch Chain capacity provider key path
     #[serde(default)]
     pub branch_chain_capacity_provider_key_path: PathBuf,
@@ -78,10 +81,11 @@ impl Default for AggregatorConfig {
     fn default() -> Self {
         AggregatorConfig {
             store: PathBuf::new(),
-            rgbpp_uri: "http://127.0.0.1:8114".to_string(),
+            rgbpp_uri: "https://testnet.ckb.dev".to_string(),
             rgbpp_ckb_provider_key_path: PathBuf::new(),
             rgbpp_queue_lock_key_path: PathBuf::new(),
             rgbpp_custodian_lock_key_path: PathBuf::new(),
+            branch_uri: "http://localhost:8114".to_string(),
             branch_chain_capacity_provider_key_path: PathBuf::new(),
             branch_chain_token_manager_lock_key_path: PathBuf::new(),
             rgbpp_scripts: Vec::new(),

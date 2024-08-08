@@ -80,6 +80,9 @@ impl Aggregator {
         let queue_data = queue_live_cell.output_data;
         let queue = CrossChainQueue::from_slice(&queue_data)
             .map_err(|e| Error::QueueCellDataDecodeError(e.to_string()))?;
+        if !queue.outbox().is_empty() {
+            return Err(Error::OutboxHasUnprocessedRequests);
+        }
         let existing_outbox = queue.outbox().as_builder().extend(request_ids).build();
         let queue_data = queue.as_builder().outbox(existing_outbox).build();
         let queue_witness = Requests::new_builder().set(requests).build();

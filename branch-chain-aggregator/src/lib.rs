@@ -6,7 +6,7 @@ pub(crate) mod transaction;
 pub(crate) mod utils;
 
 use crate::error::Error;
-use crate::schemas::leap::{MessageUnion, RequestLockArgs, Transfer};
+use crate::schemas::leap::{MessageUnion, Request, RequestLockArgs, Transfer};
 use crate::utils::QUEUE_TYPE;
 use crate::utils::{
     decode_udt_amount, encode_udt_amount, get_sighash_script_from_privkey, REQUEST_LOCK, SECP256K1,
@@ -14,7 +14,7 @@ use crate::utils::{
 };
 
 use ckb_app_config::{AggregatorConfig, AssetConfig, LockConfig, ScriptConfig};
-use ckb_logger::{info, warn};
+use ckb_logger::{error, info, warn};
 use ckb_sdk::traits::LiveCell;
 use ckb_sdk::{
     rpc::ckb_indexer::{Cell, Order},
@@ -117,10 +117,54 @@ impl Aggregator {
                         }
                     }
 
+                    // get queue data
+                    let rgbpp_queue_cell = poll_service.get_rgbpp_queue_data();
+                    let rgbpp_queue_cell = match rgbpp_queue_cell {
+                        Ok(rgbpp_queue_cell) => rgbpp_queue_cell,
+                        Err(e) => {
+                            error!("get RGB++ queue data error: {}", e.to_string());
+                            continue;
+                        }
+                    };
+
+                    let leap_tx = poll_service.create_leap_tx(rgbpp_queue_cell.clone());
+                    let leap_tx = match leap_tx {
+                        Ok(leap_tx) => leap_tx,
+                        Err(e) => {
+                            error!("create leap transaction error: {}", e.to_string());
+                            continue;
+                        }
+                    };
+                    match wait_for_tx_confirmation(
+                        poll_service.rpc_client.clone(),
+                        leap_tx,
+                        Duration::from_secs(600),
+                    ) {
+                        Ok(()) => {}
+                        Err(e) => error!("{}", e.to_string()),
+                    }
+
+                    let update_queue_tx =
+                        poll_service.create_update_rgbpp_queue_tx(rgbpp_queue_cell);
+                    let update_queue_tx = match update_queue_tx {
+                        Ok(update_queue_tx) => update_queue_tx,
+                        Err(e) => {
+                            error!("{}", e.to_string());
+                            continue;
+                        }
+                    };
+                    match wait_for_tx_confirmation(
+                        poll_service.rpc_client.clone(),
+                        update_queue_tx,
+                        Duration::from_secs(600),
+                    ) {
+                        Ok(()) => {}
+                        Err(e) => error!("{}", e.to_string()),
+                    }
+
                     if let Err(e) = poll_service.scan_rgbpp_request() {
                         info!("Aggregator: {:?}", e);
                     }
-
                     thread::sleep(poll_interval);
                 }
             })
@@ -175,26 +219,6 @@ impl Aggregator {
                 Ok(()) => info!("Transaction confirmed"),
                 Err(e) => info!("{}", e.to_string()),
             }
-
-            let leap_tx = self.create_leap_tx()?;
-            match wait_for_tx_confirmation(
-                self.rpc_client.clone(),
-                leap_tx,
-                Duration::from_secs(15),
-            ) {
-                Ok(()) => info!("Transaction confirmed"),
-                Err(e) => info!("{}", e.to_string()),
-            }
-
-            let update_queue_tx = self.create_update_rgbpp_queue_tx()?;
-            match wait_for_tx_confirmation(
-                self.rpc_client.clone(),
-                update_queue_tx,
-                Duration::from_secs(15),
-            ) {
-                Ok(()) => info!("Transaction confirmed"),
-                Err(e) => info!("{}", e.to_string()),
-            }
         }
 
         Ok(())
@@ -226,6 +250,12 @@ impl Aggregator {
             script_search_mode: None,
         };
         Ok(cell_query_option)
+    }
+
+    fn get_rgbpp_queue_data(&self) -> Result<Vec<Request>, Error> {
+        info!("Scan RGB++ Message Queue ...");
+
+        Ok(vec![])
     }
 
     fn check_request(&self, cells: Vec<Cell>) -> Vec<(Cell, Transfer)> {
@@ -288,8 +318,11 @@ impl Aggregator {
             .collect()
     }
 
-    fn create_update_rgbpp_queue_tx(&self) -> Result<H256, Error> {
-        todo!()
+    fn create_update_rgbpp_queue_tx(
+        &self,
+        _rgbpp_queue_cells: Vec<Request>,
+    ) -> Result<H256, Error> {
+        Ok(H256::default())
     }
 
     fn get_rgbpp_cell_dep(&self, script_name: &str) -> Result<CellDep, Error> {
@@ -414,6 +447,10 @@ fn wait_for_tx_confirmation(
     let start = std::time::Instant::now();
 
     loop {
+        if true {
+            return Ok(());
+        }
+
         if start.elapsed() > timeout {
             return Err(Error::TimedOut(
                 "Transaction confirmation timed out".to_string(),

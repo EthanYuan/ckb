@@ -8,6 +8,8 @@ pub enum Error {
     BinaryFileReadError(String),
     #[error("error while decoding queue cell data: {0}")]
     QueueCellDataDecodeError(String),
+    #[error("outbox has unprocessed requests, cannot add new ones")]
+    OutboxHasUnprocessedRequests,
     #[error("missing script info: {0}")]
     MissingScriptInfo(String),
     #[error("transaction build error: {0}")]

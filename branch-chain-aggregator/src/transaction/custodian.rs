@@ -1,6 +1,4 @@
-use crate::schemas::leap::{
-    CrossChainQueue, Message, MessageUnion, Request, RequestContent, Requests, Transfer,
-};
+use crate::schemas::leap::{Message, MessageUnion, Request, RequestContent, Requests, Transfer};
 use crate::Aggregator;
 use crate::Error;
 use crate::{
@@ -10,10 +8,9 @@ use crate::{
 
 use ckb_jsonrpc_types::TransactionView;
 use ckb_logger::{debug, info};
-use ckb_sdk::traits::LiveCell;
 use ckb_sdk::{
     core::TransactionBuilder,
-    rpc::ckb_indexer::{Cell, Order},
+    rpc::ckb_indexer::Cell,
     transaction::{
         builder::{ChangeBuilder, DefaultChangeBuilder},
         handler::HandlerContexts,
@@ -40,19 +37,7 @@ impl Aggregator {
         request_cells: Vec<(Cell, Transfer)>,
     ) -> Result<H256, Error> {
         // get queue cell
-        let queue_cell_search_option = self.build_message_queue_cell_search_option()?;
-        let queue_cell = self
-            .rpc_client
-            .get_cells(queue_cell_search_option.into(), Order::Asc, 1.into(), None)
-            .map_err(|e| Error::LiveCellNotFound(e.to_string()))?;
-        if queue_cell.objects.len() != 1 {
-            return Err(Error::LiveCellNotFound(format!(
-                "Queue cell found: {}",
-                queue_cell.objects.len()
-            )));
-        }
-        info!("Found {} queue cell", queue_cell.objects.len());
-        let queue_cell = queue_cell.objects[0].clone();
+        let (queue_cell, queue_cell_data) = self.get_rgbpp_queue_cell()?;
 
         // build new queue
         let mut request_ids = vec![];
@@ -76,15 +61,15 @@ impl Aggregator {
             requests.push(request);
         }
 
-        let queue_live_cell: LiveCell = queue_cell.clone().into();
-        let queue_data = queue_live_cell.output_data;
-        let queue = CrossChainQueue::from_slice(&queue_data)
-            .map_err(|e| Error::QueueCellDataDecodeError(e.to_string()))?;
-        if !queue.outbox().is_empty() {
-            return Err(Error::OutboxHasUnprocessedRequests);
+        if !queue_cell_data.outbox().is_empty() {
+            return Err(Error::QueueOutboxHasUnprocessedRequests);
         }
-        let existing_outbox = queue.outbox().as_builder().extend(request_ids).build();
-        let queue_data = queue.as_builder().outbox(existing_outbox).build();
+        let existing_outbox = queue_cell_data
+            .outbox()
+            .as_builder()
+            .extend(request_ids)
+            .build();
+        let queue_data = queue_cell_data.as_builder().outbox(existing_outbox).build();
         let queue_witness = Requests::new_builder().set(requests).build();
 
         // build custodian lock

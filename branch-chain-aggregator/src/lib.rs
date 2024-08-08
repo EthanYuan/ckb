@@ -6,7 +6,9 @@ pub(crate) mod transaction;
 pub(crate) mod utils;
 
 use crate::error::Error;
-use crate::schemas::leap::{MessageUnion, Request, RequestLockArgs, Transfer};
+use crate::schemas::leap::{
+    CrossChainQueue, MessageUnion, Request, RequestLockArgs, Requests, Transfer,
+};
 use crate::utils::QUEUE_TYPE;
 use crate::utils::{
     decode_udt_amount, encode_udt_amount, get_sighash_script_from_privkey, REQUEST_LOCK, SECP256K1,
@@ -15,6 +17,7 @@ use crate::utils::{
 
 use ckb_app_config::{AggregatorConfig, AssetConfig, LockConfig, ScriptConfig};
 use ckb_logger::{error, info, warn};
+use ckb_sdk::rpc::ResponseFormatGetter;
 use ckb_sdk::traits::LiveCell;
 use ckb_sdk::{
     rpc::ckb_indexer::{Cell, Order},
@@ -24,16 +27,17 @@ use ckb_sdk::{
 use ckb_stop_handler::{
     new_crossbeam_exit_rx, new_tokio_exit_rx, register_thread, CancellationToken,
 };
+use ckb_types::packed::{Transaction, WitnessArgs};
 use ckb_types::H256;
 use ckb_types::{
     bytes::Bytes,
     core::FeeRate,
-    packed::{CellDep, Script},
+    packed::{Byte32, CellDep, Script},
     prelude::*,
 };
 use molecule::prelude::Byte;
 
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 use std::str::FromStr;
 use std::thread;
 use std::time::Duration;
@@ -118,7 +122,7 @@ impl Aggregator {
                     }
 
                     // get queue data
-                    let rgbpp_queue_cell = poll_service.get_rgbpp_queue_data();
+                    let rgbpp_queue_cell = poll_service.get_rgbpp_queue_requests();
                     let rgbpp_queue_cell = match rgbpp_queue_cell {
                         Ok(rgbpp_queue_cell) => rgbpp_queue_cell,
                         Err(e) => {
@@ -252,10 +256,88 @@ impl Aggregator {
         Ok(cell_query_option)
     }
 
-    fn get_rgbpp_queue_data(&self) -> Result<Vec<Request>, Error> {
+    fn get_rgbpp_queue_requests(&self) -> Result<Vec<Request>, Error> {
+        let (queue_cell, queue_cell_data) = self.get_rgbpp_queue_cell()?;
+        if queue_cell_data.outbox().is_empty() {
+            return Ok(vec![]);
+        }
+        let request_ids: Vec<Byte32> = queue_cell_data.outbox().into_iter().collect();
+
+        let tx_hash = queue_cell.out_point.tx_hash;
+        let index: u32 = queue_cell.out_point.index.into();
+        let tx = self
+            .rpc_client
+            .get_transaction(tx_hash)
+            .map_err(|e| Error::RpcError(format!("get transaction error: {}", e.to_string())))?
+            .ok_or(Error::RpcError("get transaction error: None".to_string()))?
+            .transaction
+            .ok_or(Error::RpcError("get transaction error: None".to_string()))?
+            .get_value()
+            .map_err(|e| Error::RpcError(format!("get transaction error: {}", e.to_string())))?
+            .inner;
+        let tx: Transaction = tx.into();
+        let witness = tx
+            .witnesses()
+            .get(index as usize)
+            .ok_or(Error::TransactionParseError(
+                "get witness error: None".to_string(),
+            ))?;
+        let witness_input_type = WitnessArgs::from_slice(&witness.raw_data())
+            .map_err(|e| {
+                Error::TransactionParseError(format!("get witness error: {}", e.to_string()))
+            })?
+            .input_type()
+            .to_opt()
+            .ok_or(Error::TransactionParseError(
+                "get witness input type error: None".to_string(),
+            ))?;
+        let requests = Requests::from_slice(&witness_input_type.raw_data()).map_err(|e| {
+            Error::TransactionParseError(format!(
+                "get requests from witness error: {}",
+                e.to_string()
+            ))
+        })?;
+        info!("Found {} requests in witness", requests.len());
+
+        // check requests
+        let request_set: HashSet<Byte32> = requests
+            .clone()
+            .into_iter()
+            .map(|request| request.as_bytes().pack().calc_raw_data_hash())
+            .collect();
+        let all_ids_present = request_ids.iter().all(|id| request_set.contains(id));
+        if all_ids_present {
+            Ok(requests.into_iter().collect())
+        } else {
+            Err(Error::QueueCellDataError(
+                "Request IDs in queue cell data do not match witness".to_string(),
+            ))
+        }
+    }
+
+    fn get_rgbpp_queue_cell(&self) -> Result<(Cell, CrossChainQueue), Error> {
         info!("Scan RGB++ Message Queue ...");
 
-        Ok(vec![])
+        let queue_cell_search_option = self.build_message_queue_cell_search_option()?;
+        let queue_cell = self
+            .rpc_client
+            .get_cells(queue_cell_search_option.into(), Order::Asc, 1.into(), None)
+            .map_err(|e| Error::LiveCellNotFound(e.to_string()))?;
+        if queue_cell.objects.len() != 1 {
+            return Err(Error::LiveCellNotFound(format!(
+                "Queue cell found: {}",
+                queue_cell.objects.len()
+            )));
+        }
+        info!("Found {} queue cell", queue_cell.objects.len());
+        let queue_cell = queue_cell.objects[0].clone();
+
+        let queue_live_cell: LiveCell = queue_cell.clone().into();
+        let queue_data = queue_live_cell.output_data;
+        let queue = CrossChainQueue::from_slice(&queue_data)
+            .map_err(|e| Error::QueueCellDataDecodeError(e.to_string()))?;
+
+        Ok((queue_cell, queue))
     }
 
     fn check_request(&self, cells: Vec<Cell>) -> Vec<(Cell, Transfer)> {

@@ -9,7 +9,9 @@ pub enum Error {
     #[error("error while decoding queue cell data: {0}")]
     QueueCellDataDecodeError(String),
     #[error("outbox has unprocessed requests, cannot add new ones")]
-    OutboxHasUnprocessedRequests,
+    QueueOutboxHasUnprocessedRequests,
+    #[error("queue cell data error: {0}")]
+    QueueCellDataError(String),
     #[error("missing script info: {0}")]
     MissingScriptInfo(String),
     #[error("transaction build error: {0}")]
@@ -18,6 +20,8 @@ pub enum Error {
     TransactionSignError(String),
     #[error("transaction send error: {0}")]
     TransactionSendError(String),
+    #[error("transaction parse error: {0}")]
+    TransactionParseError(String),
     #[error("rpc error: {0}")]
     RpcError(String),
     #[error("Timeout: {0}")]

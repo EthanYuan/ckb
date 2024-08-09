@@ -1,5 +1,5 @@
 [package]
-name = "block-producer"
+name = "branch-chain-producer"
 version = "0.1.0"
 edition = "2021"
 

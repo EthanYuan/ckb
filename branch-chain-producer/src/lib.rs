@@ -1,4 +1,4 @@
-//! Block Producer
+//! Branch Chain Block Producer
 
 use ckb_async_runtime::{
     tokio::{

@@ -94,8 +94,8 @@ members = [
   "util/launcher",
   "devtools/doc/rpc-gen",
   "ckb-bin",
-  "block-producer"
-]
+  "branch-chain-producer"
+, "branch-chain-aggregator"]
 
 [workspace.dependencies]
 tempfile = "3"

@@ -68,8 +68,6 @@ listen_addresses = ["/ip4/0.0.0.0/tcp/8115"] # {{
 # Node connects to nodes listed here to discovery other peers when there's no local stored peers.
 # When chain.spec is changed, this usually should also be changed to the bootnodes in the new chain.
 bootnodes = [] # {{
-# mainnet => bootnodes = [\n  # Hongkong, Asia\n  "/ip4/16.163.82.218/tcp/8114/p2p/QmaZMemLXSsxKUrYNucjEbPxVX3rBKsGhWW2muWtWxUWyh",\n  # Tokyo, Asia\n  "/ip4/35.79.196.111/tcp/8114/p2p/QmYCRVonLfP18LSoz2WCHaXDorUYxuUMfhtcXK1TuZ1iwF",\n  # Mumbai, Asia\n  "/ip4/13.234.144.148/tcp/8114/p2p/QmbT7QimcrcD5k2znoJiWpxoESxang6z1Gy9wof1rT1LKR",\n  # Seoul, Asia\n  "/ip4/34.64.120.143/tcp/8114/p2p/QmejEJEbDcGGMp4D6WtftMMVLkR1ZuBfMgyLFDMJymkDt6",\n  # Virginia, North America\n  "/ip4/3.218.170.86/tcp/8114/p2p/QmShw2vtVt49wJagc1zGQXGS6LkQTcHxnEV3xs6y8MAmQN",\n  # Los Angeles, North America\n  "/ip4/35.236.107.161/tcp/8114/p2p/QmSRj57aa9sR2AiTvMyrEea8n1sEM1cDTrfb2VHVJxnGuu",\n  # Texas, North America\n  "/ip4/23.101.191.12/tcp/8114/p2p/QmexvXVDiRt2FBGptgK4gBJusWyyTEEaHeuCAa35EPNkZS",\n  # Toronto, North America\n  "/ip4/20.151.143.237/tcp/8114/p2p/QmNsGNQjYA6iP472bNnNE2GR31kCYBifhY1XcaUxRjZ1py",\n  # Frankfurt, Europe\n  "/ip4/52.59.155.249/tcp/8114/p2p/QmRHqhSGMGm5FtnkW8D6T83X7YwaiMAZXCXJJaKzQEo3rb",\n  # London, Europe\n  "/ip4/3.10.216.39/tcp/8114/p2p/QmagxSv7GNwKXQE7mi1iDjFHghjUpbqjBgqSot7PmMJqHA",\n  # Paris, Europe\n  "/ip4/13.37.172.80/tcp/8114/p2p/QmXJg4iKbQzMpLhX75RyDn89Mv7N2H8vLePBR7kgZf6hYk",\n  # Warsaw, Europe\n  "/ip4/34.118.49.255/tcp/8114/p2p/QmeCzzVmSAU5LNYAeXhdJj8TCq335aJMqUxcvZXERBWdgS",\n  # Victoria, Oceania\n  "/ip4/40.115.75.216/tcp/8114/p2p/QmW3P1WYtuz9hitqctKnRZua2deHXhNePNjvtc9Qjnwp4q",\n  # Santiago, South America\n  "/ip4/34.176.239.95/tcp/8114/p2p/QmQoWrmuFauCn3zZ2mYYKAciG9opTbjzC2wVEfWveZNDt8",\n  # Capetown, Africa\n  "/ip4/13.245.217.98/tcp/8114/p2p/Qmf4t1SzFhRWuGcFcgs7r4pXvkACsz3FcaBMcmMKQMMpn7"\n]
-# testnet => bootnodes = [\n  # Ohio, North America\n  "/ip4/18.217.146.65/tcp/8111/p2p/QmT6DFfm18wtbJz3y4aPNn3ac86N4d4p4xtfQRRPf73frC",\n  # Singapore, Asia\n  "/ip4/18.136.60.221/tcp/8111/p2p/QmTt6HeNakL8Fpmevrhdna7J4NzEMf9pLchf1CXtmtSrwb",\n  # London, Europe\n  "/ip4/35.176.207.239/tcp/8111/p2p/QmSJTsMsMGBjzv1oBNwQU36VhQRxc2WQpFoRu1ZifYKrjZ",\n  # Singapore, Asia\n  "/ip4/13.228.149.113/tcp/8111/p2p/QmQoTR39rBkpZVgLApDGDoFnJ2YDBS9hYeiib1Z6aoAdEf",\n  # Bahrain, Asia\n  "/ip4/157.241.73.87/tcp/8111/p2p/QmSPkAyXqsWpRiS7HpHLTProVdhQWLKFHCXbRjaLpJj7ZL",\n  # Japan, Asia\n  "/ip4/4.241.132.26/tcp/8111/p2p/QmX5D6aJiAQ5Fxn4BfVqSn6zrgyuQM1oXVC9yvmzLuHXnx",\n  # Korea, Asia\n  "/ip4/52.147.120.180/tcp/8111/p2p/QmPcJY2gZLUm66szYA9QaG1P3rzwseWCMgbj6AyNCyW4G2",\n  # Hong Kong, Asia\n  "/ip4/18.167.196.121/tcp/8111/p2p/QmQMjFrNGaphzfHin3mbYybbJcFMDUihKAcknquYvm9J3W",\n  # Oregon, North America\n  "/ip4/34.216.103.183/tcp/8111/p2p/Qmd41MaByDprkC5gP1XBKgamZ9DTLNk37zbPgwtiWCzRV6",\n  # Canada, North America\n  "/ip4/3.98.152.180/tcp/8111/p2p/QmWVuW5KquiWDSqgMJRFW1xRtVqkYJrWz6S9NNk6fFn3wh",\n  # Frankfurt, Europe\n  "/ip4/18.192.147.65/tcp/8111/p2p/QmWcEhsMNRcfJit62EbKgzpgtAJZX1G3Ur4shXjcvLsYDb",\n  # Sydney, Oceania\n  "/ip4/13.236.13.195/tcp/8111/p2p/QmfUTZxsse7rFJTJfoUv8bbStoDLETxst5nJEpJozNuAnH"\n]
 # staging => bootnodes = []
 # }}
 
@@ -218,3 +216,152 @@ block_uncles_cache_size    = 30
 # db_port = 5432
 # db_user = "postgres"
 # db_password = "123456"
+
+# Branch Chain built-in aggregator settings.
+[aggregator]
+# RGB++ uri
+rgbpp_uri = "https://testnet.ckb.dev"
+rgbpp_ckb_provider_key_path = "../dev/rgbpp_ckb_provider_key"
+rgbpp_queue_lock_key_path = "../dev/rgbpp_queue_lock_key"
+rgbpp_custodian_lock_key_path = "../dev/rgbpp_custodian_lock_key"
+# Branch Chain
+branch_uri = "http://localhost:8114"
+branch_chain_capacity_provider_key_path = "../dev/branch_chain_capacity_provider_key"
+branch_chain_token_manager_lock_key_path = "../dev/branch_chain_token_manager_key"
+
+[[aggregator.rgbpp_scripts]]
+script_name = "secp256k1_blake160"
+script = '''
+{
+    "args": "0x",
+    "code_hash": "0x9bd7e06f3ecf4be0f2fcd2188b23f1b9fcc88e5d4b65a8637b17723bbda3cce8",
+    "hash_type": "type"
+}
+'''
+cell_dep = '''
+{
+    "dep_type": "dep_group",
+    "out_point": {
+        "index": "0x0",
+        "tx_hash": "0xf8de3bb47d055cdf460d93a2a6e1b05f7432f9777c8c474abf4eec1d4aee5d37"
+    }
+}
+'''
+
+[[aggregator.rgbpp_scripts]]
+script_name = "xudt"
+script = '''
+{
+    "args": "0x",
+    "code_hash": "0x25c29dc317811a6f6f3985a7a9ebc4838bd388d19d0feeecf0bcd60f6c0975bb",
+    "hash_type": "type"
+}
+'''
+cell_dep = '''
+{
+    "dep_type": "code",
+    "out_point": {
+        "index": "0x0",
+        "tx_hash": "0xbf6fb538763efec2a70a6a3dcb7242787087e1030c4e7d86585bc63a9d337f5f"
+    }
+}
+'''
+
+[[aggregator.rgbpp_scripts]]
+script_name = "request_lock"
+script = '''
+{
+    "args": "0x",
+    "code_hash": "0x2fca96b423bd2b4d0d4b5098bf7a3e74ea42c3f2e1bb6f973f7c1c68adfa3d9c",
+    "hash_type": "type"
+}
+'''
+cell_dep = '''
+{
+    "dep_type": "code",
+    "out_point": {
+        "index": "0x0",
+        "tx_hash": "0x79e7a69cf175cde1d8f4fd1f7f5c9792cf07b4099a4a75946393ac6616b7aa0b"
+    }
+}
+'''
+
+[[aggregator.rgbpp_scripts]]
+script_name = "queue_type"
+script = '''
+{
+    "args": "0x4242",
+    "code_hash": "0x2da1e80cec3e553a76e22d826b63ce5f65d77622de48caa5a2fe724b0f9a18f2",
+    "hash_type": "type"
+}
+'''
+cell_dep = '''
+{
+    "dep_type": "code",
+    "out_point": {
+        "index": "0x0",
+        "tx_hash": "0xeb4614bc1d8b2aadb928758c77a07720f1794418d0257a61bac94240d4c21905"
+    }
+}
+'''
+
+[[aggregator.branch_scripts]]
+script_name = "secp256k1_blake160"
+script = '''
+{
+    "args": "0x",
+    "code_hash": "0x9bd7e06f3ecf4be0f2fcd2188b23f1b9fcc88e5d4b65a8637b17723bbda3cce8",
+    "hash_type": "type"
+}
+'''
+cell_dep = '''
+{
+    "dep_type": "dep_group",
+    "out_point": {
+        "index": "0x0",
+        "tx_hash": "0x8cca9bc6626cd5bd9890e5468cee855b87943b1fa4c0db92c39ba4f0dd61b90c"
+    }
+}
+'''
+
+[[aggregator.branch_scripts]]
+script_name = "xudt"
+script = '''
+{
+    "args": "0x",
+    "code_hash": "0x6283a479a3cf5d4276cd93594de9f1827ab9b55c7b05b3d28e4c2e0a696cfefd",
+    "hash_type": "type"
+}
+'''
+cell_dep = '''
+{
+    "dep_type": "code",
+    "out_point": {
+        "index": "0x5",
+        "tx_hash": "0xad501cf59dc57021e4e4879a5f54aff4fe91771685e9fcfa3896ecdbf0664ed4"
+    }
+}
+'''
+
+[[aggregator.rgbpp_assets]]
+asset_name = "d7d6"
+# Only the first is_capacity = true is valid; others should be treated as false
+is_capacity = true
+asset_id = "1e1e5f0d711c1b9a5231d49997ed1c0bf7d602de53d960770b1cb38f4e6fd7d6"
+script = '''
+{
+    "args": "0x737e3449341faf2704ff6883cd09d22639f71cc7f69aee10d6505eeef1474493",
+    "code_hash": "0x25c29dc317811a6f6f3985a7a9ebc4838bd388d19d0feeecf0bcd60f6c0975bb",
+    "hash_type": "type"
+}
+'''
+
+[[aggregator.rgbpp_asset_locks]]
+lock_hash = "562e4e8a2f64a3e9c24beb4b7dd002d0ad3b842d0cc77924328e36ad114e3ebe"
+script = '''
+{
+    "args": "0xf9a9ad51ed14936d33f7bb854aaefa5f47a3ccbd",
+    "code_hash": "0x9bd7e06f3ecf4be0f2fcd2188b23f1b9fcc88e5d4b65a8637b17723bbda3cce8",
+    "hash_type": "type"
+}
+'''

@@ -22,6 +22,7 @@ use ckb_sdk::{
     rpc::ckb_indexer::{Cell, Order},
     rpc::CkbRpcClient as RpcClient,
     traits::{CellQueryOptions, MaturityOption, PrimaryScriptType, QueryOrder},
+    Since, SinceType,
 };
 use ckb_stop_handler::{
     new_crossbeam_exit_rx, new_tokio_exit_rx, register_thread, CancellationToken,
@@ -43,7 +44,7 @@ use std::time::Duration;
 
 const THREAD_NAME: &str = "Aggregator";
 const CKB_FEE_RATE_LIMIT: u64 = 5000;
-
+const CONFIRMATION_THRESHOLD: u64 = 24;
 ///
 #[derive(Clone)]
 pub struct Aggregator {
@@ -211,7 +212,12 @@ impl Aggregator {
             cursor = Some(request_cells.last_cursor);
 
             info!("Found {} request cells", request_cells.objects.len());
-            let cells_with_messge = self.check_request(request_cells.objects.clone());
+            let tip = self
+                .rgbpp_rpc_client
+                .get_tip_block_number()
+                .map_err(|e| Error::RpcError(format!("get tip block number error: {}", e)))?
+                .value();
+            let cells_with_messge = self.check_request(request_cells.objects.clone(), tip);
             info!("Found {} valid request cells", cells_with_messge.len());
             if cells_with_messge.is_empty() {
                 break;
@@ -316,7 +322,7 @@ impl Aggregator {
         Ok((queue_cell, queue))
     }
 
-    fn check_request(&self, cells: Vec<Cell>) -> Vec<(Cell, Transfer)> {
+    fn check_request(&self, cells: Vec<Cell>, tip: u64) -> Vec<(Cell, Transfer)> {
         cells
             .into_iter()
             .filter_map(|cell| {
@@ -328,7 +334,21 @@ impl Aggregator {
                         info!("target_request_type_hash: {:?}", target_request_type_hash);
 
                         let timeout: u64 = args.timeout().unpack();
-                        info!("timeout: {:?}", timeout);
+                        let since = Since::from_raw_value(timeout);
+                        let since_check =
+                            since.extract_metric().map_or(false, |(since_type, value)| {
+                                match since_type {
+                                    SinceType::BlockNumber => {
+                                        let threshold = if since.is_absolute() {
+                                            value
+                                        } else {
+                                            cell.block_number.value() + value
+                                        };
+                                        tip + CONFIRMATION_THRESHOLD < threshold
+                                    }
+                                    _ => false,
+                                }
+                            });
 
                         let content = args.content();
                         let target_chain_id: Bytes = content.target_chain_id().as_bytes();
@@ -366,6 +386,7 @@ impl Aggregator {
                             && self.chain_id.clone() == target_chain_id
                             && request_type == Byte::new(RequestType::CkbToBranch as u8)
                             && check_message
+                            && since_check
                         {
                             Some((cell, transfer))
                         } else {

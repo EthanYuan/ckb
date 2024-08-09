@@ -152,7 +152,7 @@ impl Aggregator {
                     }
 
                     let update_queue_tx =
-                        poll_service.create_update_rgbpp_queue_tx(rgbpp_requests, queue_cell);
+                        poll_service.create_clear_queue_tx(rgbpp_requests, queue_cell);
                     let update_queue_tx = match update_queue_tx {
                         Ok(update_queue_tx) => update_queue_tx,
                         Err(e) => {
@@ -373,14 +373,6 @@ impl Aggregator {
                     })
             })
             .collect()
-    }
-
-    fn create_update_rgbpp_queue_tx(
-        &self,
-        _rgbpp_queue_cells: Vec<Request>,
-        _queue_cell: OutPoint,
-    ) -> Result<H256, Error> {
-        Ok(H256::default())
     }
 
     fn get_rgbpp_cell_dep(&self, script_name: &str) -> Result<CellDep, Error> {

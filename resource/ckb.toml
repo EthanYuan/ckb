@@ -319,7 +319,7 @@ cell_dep = '''
     "dep_type": "dep_group",
     "out_point": {
         "index": "0x0",
-        "tx_hash": "0xd3e71819d81b71a0dbe5babd414aa65d25c9ae082f38ac303772de48d18985e8"
+        "tx_hash": "0x8cca9bc6626cd5bd9890e5468cee855b87943b1fa4c0db92c39ba4f0dd61b90c"
     }
 }
 '''
@@ -338,7 +338,7 @@ cell_dep = '''
     "dep_type": "code",
     "out_point": {
         "index": "0x5",
-        "tx_hash": "0x1836c681a0de9e48d1ffc206ab684ebad53ad65a2878fc6a28ede4a8970d075c"
+        "tx_hash": "0xad501cf59dc57021e4e4879a5f54aff4fe91771685e9fcfa3896ecdbf0664ed4"
     }
 }
 '''

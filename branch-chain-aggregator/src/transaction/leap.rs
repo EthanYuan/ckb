@@ -15,7 +15,6 @@ use ckb_sdk::{
     traits::{CellQueryOptions, MaturityOption, PrimaryScriptType, QueryOrder},
     transaction::{
         builder::{ChangeBuilder, DefaultChangeBuilder},
-        handler::HandlerContexts,
         input::{InputIterator, TransactionInput},
         signer::{SignContexts, TransactionSigner},
         TransactionBuilderConfiguration,
@@ -46,7 +45,10 @@ impl Aggregator {
         let witness = self.get_last_leap_tx_witness();
         if let Ok((witness, tx_hash)) = witness {
             if witness == queue_cell {
-                info!("The queue request has already been minted through the last leap tx.");
+                info!(
+                    "The queue request has already been minted through the last leap tx: {}",
+                    tx_hash
+                );
                 return Ok(tx_hash);
             }
         }
@@ -134,7 +136,14 @@ impl Aggregator {
             .cell_deps(vec![secp256k1_cell_dep, xudt_cell_dep])
             .inputs(inputs)
             .outputs(outputs)
-            .outputs_data(outputs_data);
+            .outputs_data(outputs_data)
+            .witness(
+                WitnessArgs::new_builder()
+                    .input_type(Some(queue_cell.as_bytes()).pack())
+                    .build()
+                    .as_bytes()
+                    .pack(),
+            );
 
         // group
         #[allow(clippy::mutable_key_type)]
@@ -183,7 +192,6 @@ impl Aggregator {
             let _ = change_builder.check_balance(queue_cell_input, &mut tx_builder);
         };
 
-        let contexts = HandlerContexts::default();
         let iterator = InputIterator::new(vec![capacity_provider_script], &network_info);
         let mut tx_with_groups = {
             let mut check_result = None;
@@ -205,28 +213,11 @@ impl Aggregator {
                     .push(input_index);
 
                 if change_builder.check_balance(input, &mut tx_builder) {
-                    let mut script_groups: Vec<ScriptGroup> = lock_groups
+                    let script_groups: Vec<ScriptGroup> = lock_groups
                         .into_values()
                         .chain(type_groups.into_values())
                         .collect();
-                    for script_group in script_groups.iter_mut() {
-                        for handler in configuration.get_script_handlers() {
-                            for context in &contexts.contexts {
-                                if handler
-                                    .build_transaction(
-                                        &mut tx_builder,
-                                        script_group,
-                                        context.as_ref(),
-                                    )
-                                    .map_err(|e| Error::TransactionBuildError(e.to_string()))?
-                                {
-                                    break;
-                                }
-                            }
-                        }
-                    }
                     let tx_view = change_builder.finalize(tx_builder);
-
                     check_result = Some(TransactionWithScriptGroups::new(tx_view, script_groups));
                     break;
                 }
@@ -239,27 +230,27 @@ impl Aggregator {
         })?;
 
         // sign
-        let (_, message_queue_key) =
-            get_sighash_script_from_privkey(self.config.rgbpp_queue_lock_key_path.clone())?;
+        let (_, token_manager_key) = get_sighash_script_from_privkey(
+            self.config.branch_chain_token_manager_lock_key_path.clone(),
+        )?;
         TransactionSigner::new(&network_info)
             .sign_transaction(
                 &mut tx_with_groups,
-                &SignContexts::new_sighash(vec![message_queue_key, capacity_provider_key]),
+                &SignContexts::new_sighash(vec![capacity_provider_key, token_manager_key]),
             )
             .map_err(|e| Error::TransactionSignError(e.to_string()))?;
 
         // send tx
         let tx_json = TransactionView::from(tx_with_groups.get_tx_view().clone());
         info!(
-            "custodian tx: {}",
+            "leap tx: {}",
             serde_json::to_string_pretty(&tx_json).unwrap()
         );
-        let tx_hash = H256::default();
-        // let tx_hash = self
-        //     .rgbpp_rpc_client
-        //     .send_transaction(tx_json.inner, None)
-        //     .map_err(|e| Error::TransactionSendError(format!("send transaction error: {}", e)))?;
-        info!("custodian tx send: {:?}", tx_hash.pack());
+        let tx_hash = self
+            .branch_rpc_client
+            .send_transaction(tx_json.inner, None)
+            .map_err(|e| Error::TransactionSendError(format!("send transaction error: {}", e)))?;
+        info!("leap tx send: {:?}", tx_hash.pack());
 
         Ok(tx_hash)
     }
@@ -272,12 +263,9 @@ impl Aggregator {
         )?;
         let queue_out_point =
             OutPoint::from_slice(&witness_input_type.raw_data()).map_err(|e| {
-                Error::TransactionParseError(format!(
-                    "get queue from witness error: {}",
-                    e.to_string()
-                ))
+                Error::TransactionParseError(format!("get queue from witness error: {}", e))
             })?;
-        info!("Found message queue in witness");
+        info!("Found message queue in leap tx witness");
         Ok((queue_out_point, tx_hash))
     }
 
@@ -290,12 +278,12 @@ impl Aggregator {
         let index: u32 = out_point.index.into();
         let tx = rpc_client
             .get_transaction(tx_hash.clone())
-            .map_err(|e| Error::RpcError(format!("get transaction error: {}", e.to_string())))?
+            .map_err(|e| Error::RpcError(format!("get transaction error: {}", e)))?
             .ok_or(Error::RpcError("get transaction error: None".to_string()))?
             .transaction
             .ok_or(Error::RpcError("get transaction error: None".to_string()))?
             .get_value()
-            .map_err(|e| Error::RpcError(format!("get transaction error: {}", e.to_string())))?
+            .map_err(|e| Error::RpcError(format!("get transaction error: {}", e)))?
             .inner;
         let tx: Transaction = tx.into();
         let witness = tx
@@ -305,9 +293,7 @@ impl Aggregator {
                 "get witness error: None".to_string(),
             ))?;
         let witness_input_type = WitnessArgs::from_slice(&witness.raw_data())
-            .map_err(|e| {
-                Error::TransactionParseError(format!("get witness error: {}", e.to_string()))
-            })?
+            .map_err(|e| Error::TransactionParseError(format!("get witness error: {}", e)))?
             .input_type()
             .to_opt()
             .ok_or(Error::TransactionParseError(

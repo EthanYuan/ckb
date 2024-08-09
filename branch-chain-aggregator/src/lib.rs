@@ -38,6 +38,7 @@ use molecule::prelude::Byte;
 use std::collections::{HashMap, HashSet};
 use std::str::FromStr;
 use std::thread;
+use std::thread::sleep;
 use std::time::Duration;
 
 const THREAD_NAME: &str = "Aggregator";
@@ -269,10 +270,7 @@ impl Aggregator {
         let (_, witness_input_type) =
             self.get_tx_witness_input_type(queue_cell.out_point, self.rgbpp_rpc_client.clone())?;
         let requests = Requests::from_slice(&witness_input_type.raw_data()).map_err(|e| {
-            Error::TransactionParseError(format!(
-                "get requests from witness error: {}",
-                e.to_string()
-            ))
+            Error::TransactionParseError(format!("get requests from witness error: {}", e))
         })?;
         info!("Found {} requests in witness", requests.len());
 
@@ -508,6 +506,7 @@ fn wait_for_tx_confirmation(
 
     loop {
         if true {
+            sleep(Duration::from_secs(8));
             return Ok(());
         }
 

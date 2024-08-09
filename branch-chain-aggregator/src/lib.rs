@@ -262,6 +262,7 @@ impl Aggregator {
     fn get_rgbpp_queue_requests(&self) -> Result<(Vec<Request>, OutPoint), Error> {
         let (queue_cell, queue_cell_data) = self.get_rgbpp_queue_cell()?;
         if queue_cell_data.outbox().is_empty() {
+            info!("No requests in queue");
             return Ok((vec![], OutPoint::default()));
         }
         let request_ids: Vec<Byte32> = queue_cell_data.outbox().into_iter().collect();

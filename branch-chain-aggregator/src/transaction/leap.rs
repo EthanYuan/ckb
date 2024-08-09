@@ -41,6 +41,11 @@ impl Aggregator {
         requests: Vec<Request>,
         queue_cell: OutPoint,
     ) -> Result<H256, Error> {
+        if requests.is_empty() {
+            info!("No requests to mint, skip leap tx");
+            return Ok(H256::default());
+        }
+
         // Check if the requests of the last leap tx are duplicated, and if so, return immediately.
         let witness = self.get_last_leap_tx_witness();
         if let Ok((witness, tx_hash)) = witness {

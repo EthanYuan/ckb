@@ -29,9 +29,14 @@ use std::collections::HashMap;
 impl Aggregator {
     pub(crate) fn create_clear_queue_tx(
         &self,
-        _rgbpp_queue_cells: Vec<Request>,
+        rgbpp_queue_cells: Vec<Request>,
         _queue_cell: OutPoint,
     ) -> Result<H256, Error> {
+        if rgbpp_queue_cells.is_empty() {
+            info!("no queue requests to clear");
+            return Ok(H256::default());
+        }
+
         // get queue cell
         let (queue_cell, queue_cell_data) = self.get_rgbpp_queue_cell()?;
 

@@ -351,7 +351,7 @@ impl Aggregator {
                             });
 
                         let content = args.content();
-                        let target_chain_id: Bytes = content.target_chain_id().as_bytes();
+                        let target_chain_id: Bytes = content.target_chain_id().raw_data();
                         info!("target_chain_id: {:?}", target_chain_id);
                         let request_type = content.request_type();
 

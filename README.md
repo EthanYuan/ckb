@@ -52,7 +52,7 @@ The following settings are used to configure the `block_assembler` in the `ckb.t
 ```toml
 [block_assembler]
 code_hash = "0x9bd7e06f3ecf4be0f2fcd2188b23f1b9fcc88e5d4b65a8637b17723bbda3cce8"
-args = "0x470dcdc5e44064909650113a274b3b36aecb6dc7"
+args = "0xc8328aabcd9b9e8e64fbc566c4385c3bdeb219d7"
 hash_type = "type"
 message = "0x"
 ```

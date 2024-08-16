@@ -130,6 +130,7 @@ fn run_app_inner(
     let ret = match cmd {
         cli::CMD_RUN => subcommand::run(setup.run(matches)?, version, handle.clone()),
         cli::CMD_MINER => subcommand::miner(setup.miner(matches)?, handle.clone()),
+        cli::CMD_AGGREGATOR => subcommand::aggregator(setup.aggregator(matches)?, handle.clone()),
         cli::CMD_REPLAY => subcommand::replay(setup.replay(matches)?, handle.clone()),
         cli::CMD_EXPORT => subcommand::export(setup.export(matches)?, handle.clone()),
         cli::CMD_IMPORT => subcommand::import(setup.import(matches)?, handle.clone()),

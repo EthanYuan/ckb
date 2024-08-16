@@ -51,6 +51,8 @@ include!(concat!(env!("OUT_DIR"), "/code_hashes.rs"));
 pub const CKB_CONFIG_FILE_NAME: &str = "ckb.toml";
 /// CKB miner config file name.
 pub const MINER_CONFIG_FILE_NAME: &str = "ckb-miner.toml";
+/// CKB aggregator config file name.
+pub const AGGREGATOR_CONFIG_FILE_NAME: &str = "ckb-aggregator.toml";
 /// The relative spec file path for the dev chain.
 pub const SPEC_DEV_FILE_NAME: &str = "specs/dev.toml";
 /// The file name of the generated RocksDB options file.
@@ -107,6 +109,13 @@ impl Resource {
         Resource::file_system(root_dir.as_ref().join(MINER_CONFIG_FILE_NAME))
     }
 
+    /// Creates the CKB aggregator config file resource from the file system.
+    ///
+    /// It searches the file name `AGGREGATOR_CONFIG_FILE_NAME` in the directory `root_dir`.
+    pub fn aggregator_config<P: AsRef<Path>>(root_dir: P) -> Resource {
+        Resource::file_system(root_dir.as_ref().join(AGGREGATOR_CONFIG_FILE_NAME))
+    }
+
     /// Creates the RocksDB options file resource from the file system.
     ///
     /// It searches the file name `DB_OPTIONS_FILE_NAME` in the directory `root_dir`.
@@ -122,6 +131,11 @@ impl Resource {
     /// Creates the bundled CKB miner config file resource.
     pub fn bundled_miner_config() -> Resource {
         Resource::bundled(MINER_CONFIG_FILE_NAME.to_string())
+    }
+
+    /// Creates the bundled CKB aggregator config file resource.
+    pub fn bundled_aggregator_config() -> Resource {
+        Resource::bundled(AGGREGATOR_CONFIG_FILE_NAME.to_string())
     }
 
     /// Creates the bundled RocksDB options file resource.

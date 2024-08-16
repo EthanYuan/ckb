@@ -1,4 +1,4 @@
-use crate::{CKBAppConfig, MemoryTrackerConfig, MinerConfig};
+use crate::{AggregatorConfig, CKBAppConfig, MemoryTrackerConfig, MinerConfig};
 use ckb_chain_spec::consensus::Consensus;
 use ckb_jsonrpc_types::ScriptHashType;
 use ckb_pow::PowEngine;
@@ -93,6 +93,12 @@ pub struct MinerArgs {
     /// The miner process will exit when there are `limit` nonces (puzzle solutions) found. Set it
     /// to 0 to loop forever.
     pub limit: u128,
+}
+
+/// Parsed command line arguments for `ckb aggregator`.
+pub struct AggregatorArgs {
+    /// Parsed `ckb-aggregator.toml`.
+    pub config: AggregatorConfig,
 }
 
 /// Parsed command line arguments for `ckb stats`.

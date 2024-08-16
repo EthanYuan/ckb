@@ -18,6 +18,7 @@ fn main() {
     for f in &[
         "ckb.toml",
         "ckb-miner.toml",
+        "ckb-aggregator.toml",
         "default.db-options",
         "xudt_rce",
     ] {

@@ -10,6 +10,8 @@ pub const BIN_NAME: &str = "ckb";
 pub const CMD_RUN: &str = "run";
 /// Subcommand `miner`.
 pub const CMD_MINER: &str = "miner";
+/// Subcommand `aggregator`.
+pub const CMD_AGGREGATOR: &str = "aggregator";
 /// Subcommand `export`.
 pub const CMD_EXPORT: &str = "export";
 /// Subcommand `import`.
@@ -146,6 +148,7 @@ pub fn basic_app() -> Command {
         )
         .subcommand(run())
         .subcommand(miner())
+        .subcommand(aggregator())
         .subcommand(export())
         .subcommand(import())
         .subcommand(list_hashes())
@@ -254,6 +257,10 @@ fn miner() -> Command {
             0 means the miner will never exit. [default: 0]",
             ),
     )
+}
+
+fn aggregator() -> Command {
+    Command::new(CMD_AGGREGATOR).about("Runs Branch aggregator")
 }
 
 fn reset_data() -> Command {

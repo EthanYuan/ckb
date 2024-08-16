@@ -1,3 +1,4 @@
+mod aggregator;
 #[cfg(not(target_os = "windows"))]
 mod daemon;
 mod export;
@@ -12,6 +13,7 @@ mod reset_data;
 mod run;
 mod stats;
 
+pub use self::aggregator::aggregator;
 #[cfg(not(target_os = "windows"))]
 pub use self::daemon::{check_process, daemon};
 pub use self::export::export;

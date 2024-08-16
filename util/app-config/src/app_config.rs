@@ -23,12 +23,14 @@ use super::{cli, legacy, ExitCode};
 
 /// The parsed config file.
 ///
-/// CKB process reads `ckb.toml` or `ckb-miner.toml`, depending what subcommand to be executed.
+/// CKB process reads `ckb.toml`, `ckb-miner.toml` or `ckb-aggregator.toml`, depending what subcommand to be executed.
 pub enum AppConfig {
     /// The parsed `ckb.toml.`
     CKB(Box<CKBAppConfig>),
     /// The parsed `ckb-miner.toml.`
     Miner(Box<MinerAppConfig>),
+    /// The parsed `ckb-aggregator.toml.`
+    Aggregator(Box<AggregatorAppConfig>),
 }
 
 /// The main config file for the most subcommands. Usually it is the `ckb.toml` in the CKB root
@@ -134,6 +136,41 @@ pub struct MinerAppConfig {
     pub miner: MinerConfig,
 }
 
+/// The aggregator config file for `ckb aggregator`. Usually it is the `ckb-aggregator.toml` in the CKB root
+/// directory.
+#[derive(Clone, Debug, Serialize)]
+#[serde(deny_unknown_fields)]
+pub struct AggregatorAppConfig {
+    /// The binary name.
+    #[serde(skip)]
+    pub bin_name: String,
+    /// The root directory.
+    #[serde(skip)]
+    pub root_dir: PathBuf,
+    /// The data directory.
+    pub data_dir: PathBuf,
+    /// Chain config options.
+    pub chain: ChainConfig,
+    /// Logger config options.
+    pub logger: LogConfig,
+    /// Sentry config options.
+    #[cfg(feature = "with_sentry")]
+    pub sentry: SentryConfig,
+    /// Metrics options.
+    ///
+    /// Developers can collect metrics for performance tuning and troubleshooting.
+    #[serde(default)]
+    pub metrics: MetricsConfig,
+    /// Memory tracker options.
+    ///
+    /// Developers can enable memory tracker to analyze the process memory usage.
+    #[serde(default)]
+    pub memory_tracker: MemoryTrackerConfig,
+
+    /// The aggregator config options.
+    pub aggregator: AggregatorConfig,
+}
+
 /// The chain config options.
 #[derive(Clone, Debug, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
@@ -145,8 +182,9 @@ pub struct ChainConfig {
 impl AppConfig {
     /// Reads the config file for the subcommand.
     ///
-    /// This will reads the `ckb-miner.toml` in the CKB directory for `ckb miner`, and `ckb.toml`
-    /// for all other subcommands.
+    /// This will reads the `ckb-miner.toml` in the CKB directory for `ckb miner`,
+    /// `ckb-aggregator.toml` for `ckb aggregator`,
+    /// and `ckb.toml` for all other subcommands.
     pub fn load_for_subcommand<P: AsRef<Path>>(
         root_dir: P,
         subcommand_name: &str,
@@ -157,6 +195,14 @@ impl AppConfig {
                 let config = MinerAppConfig::load_from_slice(&resource.get()?)?;
 
                 Ok(AppConfig::with_miner(
+                    config.derive_options(root_dir.as_ref())?,
+                ))
+            }
+            cli::CMD_AGGREGATOR => {
+                let resource = ensure_ckb_dir(Resource::aggregator_config(root_dir.as_ref()))?;
+                let config = AggregatorAppConfig::load_from_slice(&resource.get()?)?;
+
+                Ok(AppConfig::with_aggregator(
                     config.derive_options(root_dir.as_ref())?,
                 ))
             }
@@ -176,6 +222,7 @@ impl AppConfig {
         match self {
             AppConfig::CKB(config) => &config.logger,
             AppConfig::Miner(config) => &config.logger,
+            AppConfig::Aggregator(config) => &config.logger,
         }
     }
 
@@ -185,6 +232,7 @@ impl AppConfig {
         match self {
             AppConfig::CKB(config) => &config.sentry,
             AppConfig::Miner(config) => &config.sentry,
+            AppConfig::Aggregator(config) => &config.sentry,
         }
     }
 
@@ -193,6 +241,7 @@ impl AppConfig {
         match self {
             AppConfig::CKB(config) => &config.metrics,
             AppConfig::Miner(config) => &config.metrics,
+            AppConfig::Aggregator(config) => &config.metrics,
         }
     }
 
@@ -201,6 +250,7 @@ impl AppConfig {
         match self {
             AppConfig::CKB(config) => &config.memory_tracker,
             AppConfig::Miner(config) => &config.memory_tracker,
+            AppConfig::Aggregator(config) => &config.memory_tracker,
         }
     }
 
@@ -209,6 +259,7 @@ impl AppConfig {
         let spec_resource = match self {
             AppConfig::CKB(config) => &config.chain.spec,
             AppConfig::Miner(config) => &config.chain.spec,
+            AppConfig::Aggregator(config) => &config.chain.spec,
         };
         ChainSpec::load_from(spec_resource).map_err(|err| {
             eprintln!("{err}");
@@ -218,7 +269,7 @@ impl AppConfig {
 
     /// Unpacks the parsed ckb.toml config file.
     ///
-    /// Panics when this is a parsed ckb-miner.toml.
+    /// Panics when this is a parsed ckb-miner.toml or ckb-aggregator.toml.
     pub fn into_ckb(self) -> Result<Box<CKBAppConfig>, ExitCode> {
         match self {
             AppConfig::CKB(config) => Ok(config),
@@ -231,10 +282,23 @@ impl AppConfig {
 
     /// Unpacks the parsed ckb-miner.toml config file.
     ///
-    /// Panics when this is a parsed ckb.toml.
+    /// Panics when this is a parsed ckb.toml or ckb-aggregator.toml.
     pub fn into_miner(self) -> Result<Box<MinerAppConfig>, ExitCode> {
         match self {
             AppConfig::Miner(config) => Ok(config),
+            _ => {
+                eprintln!("Unmatched config file");
+                Err(ExitCode::Failure)
+            }
+        }
+    }
+
+    /// Unpacks the parsed ckb-aggregator.toml config file.
+    ///
+    /// Panics when this is a parsed ckb.toml or ckb-miner.toml.
+    pub fn into_aggregator(self) -> Result<Box<AggregatorAppConfig>, ExitCode> {
+        match self {
+            AppConfig::Aggregator(config) => Ok(config),
             _ => {
                 eprintln!("Unmatched config file");
                 Err(ExitCode::Failure)
@@ -247,6 +311,7 @@ impl AppConfig {
         match self {
             AppConfig::CKB(config) => config.bin_name = bin_name,
             AppConfig::Miner(config) => config.bin_name = bin_name,
+            AppConfig::Aggregator(config) => config.bin_name = bin_name,
         }
     }
 }
@@ -257,6 +322,9 @@ impl AppConfig {
     }
     fn with_miner(config: MinerAppConfig) -> AppConfig {
         AppConfig::Miner(Box::new(config))
+    }
+    fn with_aggregator(config: AggregatorAppConfig) -> AppConfig {
+        AppConfig::Aggregator(Box::new(config))
     }
 }
 
@@ -342,6 +410,35 @@ impl MinerAppConfig {
         self.data_dir = mkdir(canonicalize_data_dir(self.data_dir, root_dir))?;
         self.logger.log_dir = self.data_dir.join("logs");
         self.logger.file = Path::new("miner.log").to_path_buf();
+        if self.logger.log_to_file {
+            mkdir(self.logger.log_dir.clone())?;
+            touch(self.logger.log_dir.join(&self.logger.file))?;
+        }
+        self.chain.spec.absolutize(root_dir);
+
+        Ok(self)
+    }
+}
+
+impl AggregatorAppConfig {
+    /// Load a new instance from a file.
+    pub fn load_from_slice(slice: &[u8]) -> Result<Self, ExitCode> {
+        let legacy_config: legacy::AggregatorAppConfig = toml::from_slice(slice)?;
+        for field in legacy_config.deprecated_fields() {
+            eprintln!(
+                "WARN: the option \"{}\" in configuration files is deprecated since v{}.",
+                field.path, field.since
+            );
+        }
+        Ok(legacy_config.into())
+    }
+
+    fn derive_options(mut self, root_dir: &Path) -> Result<Self, ExitCode> {
+        self.root_dir = root_dir.to_path_buf();
+
+        self.data_dir = mkdir(canonicalize_data_dir(self.data_dir, root_dir))?;
+        self.logger.log_dir = self.data_dir.join("logs");
+        self.logger.file = Path::new("aggregator.log").to_path_buf();
         if self.logger.log_to_file {
             mkdir(self.logger.log_dir.clone())?;
             touch(self.logger.log_dir.join(&self.logger.file))?;

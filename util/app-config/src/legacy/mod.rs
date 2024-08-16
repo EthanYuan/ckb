@@ -83,6 +83,26 @@ pub(crate) struct MinerAppConfig {
     miner: crate::MinerConfig,
 }
 
+#[derive(Clone, Debug, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub(crate) struct AggregatorAppConfig {
+    data_dir: PathBuf,
+    chain: crate::ChainConfig,
+    logger: crate::LogConfig,
+
+    #[cfg(feature = "with_sentry")]
+    sentry: crate::SentryConfig,
+    #[cfg(not(feature = "with_sentry"))]
+    #[serde(default)]
+    sentry: serde_json::Value,
+
+    #[serde(default)]
+    metrics: crate::MetricsConfig,
+    #[serde(default)]
+    memory_tracker: crate::MemoryTrackerConfig,
+    aggregator: crate::AggregatorConfig,
+}
+
 //
 // The conversion which convert legacy structs to latest structs.
 //
@@ -167,6 +187,34 @@ impl From<MinerAppConfig> for crate::MinerAppConfig {
     }
 }
 
+impl From<AggregatorAppConfig> for crate::AggregatorAppConfig {
+    fn from(input: AggregatorAppConfig) -> Self {
+        let AggregatorAppConfig {
+            data_dir,
+            chain,
+            logger,
+            sentry,
+            metrics,
+            memory_tracker,
+            aggregator,
+        } = input;
+        #[cfg(not(feature = "with_sentry"))]
+        let _ = sentry;
+        Self {
+            bin_name: cli::BIN_NAME.to_owned(),
+            root_dir: Default::default(),
+            data_dir,
+            chain,
+            logger,
+            #[cfg(feature = "with_sentry")]
+            sentry,
+            metrics,
+            memory_tracker,
+            aggregator,
+        }
+    }
+}
+
 //
 // The core functions.
 //
@@ -205,6 +253,12 @@ impl CKBAppConfig {
 }
 
 impl MinerAppConfig {
+    pub(crate) fn deprecated_fields(&self) -> Vec<DeprecatedField> {
+        Vec::new()
+    }
+}
+
+impl AggregatorAppConfig {
     pub(crate) fn deprecated_fields(&self) -> Vec<DeprecatedField> {
         Vec::new()
     }

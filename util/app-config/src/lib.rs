@@ -12,11 +12,12 @@ mod sentry_config;
 mod tests;
 
 pub use app_config::{
-    AppConfig, CKBAppConfig, ChainConfig, LogConfig, MetricsConfig, MinerAppConfig,
+    AggregatorAppConfig, AppConfig, CKBAppConfig, ChainConfig, LogConfig, MetricsConfig,
+    MinerAppConfig,
 };
 pub use args::{
-    DaemonArgs, ExportArgs, ImportArgs, InitArgs, MigrateArgs, MinerArgs, PeerIDArgs, ReplayArgs,
-    ResetDataArgs, RunArgs, StatsArgs,
+    AggregatorArgs, DaemonArgs, ExportArgs, ImportArgs, InitArgs, MigrateArgs, MinerArgs,
+    PeerIDArgs, ReplayArgs, ResetDataArgs, RunArgs, StatsArgs,
 };
 use ckb_logger::info;
 pub use configs::*;
@@ -162,6 +163,14 @@ impl Setup {
             config: config.miner,
             memory_tracker,
             limit,
+        })
+    }
+
+    /// Executes `ckb aggregator`.
+    pub fn aggregator(self, _matches: &ArgMatches) -> Result<AggregatorArgs, ExitCode> {
+        let config = self.config.into_aggregator()?;
+        Ok(AggregatorArgs {
+            config: config.aggregator,
         })
     }
 
@@ -479,7 +488,10 @@ impl Setup {
 
 #[cfg(feature = "with_sentry")]
 fn is_daemon(subcommand_name: &str) -> bool {
-    matches!(subcommand_name, cli::CMD_RUN | cli::CMD_MINER)
+    matches!(
+        subcommand_name,
+        cli::CMD_RUN | cli::CMD_MINER | cli::CMD_AGGREGATOR
+    )
 }
 
 fn consensus_from_spec(spec: &ChainSpec) -> Result<Consensus, ExitCode> {

@@ -437,6 +437,10 @@ impl AggregatorAppConfig {
         self.root_dir = root_dir.to_path_buf();
 
         self.data_dir = mkdir(canonicalize_data_dir(self.data_dir, root_dir))?;
+
+        let branch_chain_path = mkdir(self.data_dir.join("branch_chain"))?;
+        self.aggregator.adjust(root_dir, branch_chain_path);
+
         self.logger.log_dir = self.data_dir.join("logs");
         self.logger.file = Path::new("aggregator.log").to_path_buf();
         if self.logger.log_to_file {

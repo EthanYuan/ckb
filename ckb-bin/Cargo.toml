@@ -38,6 +38,7 @@ ckb-verification-traits = { path = "../verification/traits", version = "= 0.116.
 ckb-async-runtime = { path = "../util/runtime", version = "= 0.116.1" }
 ckb-migrate = { path = "../util/migrate", version = "= 0.116.1" }
 ckb-launcher = { path = "../util/launcher", version = "= 0.116.1" }
+branch-chain-aggregator = { path = "../branch-chain-aggregator", version = "= 0.1.0" }
 base64 = "0.21.0"
 tempfile.workspace = true
 rayon = "1.0"

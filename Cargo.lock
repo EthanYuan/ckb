@@ -717,6 +717,7 @@ name = "ckb-bin"
 version = "0.116.1"
 dependencies = [
  "base64 0.21.7",
+ "branch-chain-aggregator",
  "ckb-app-config",
  "ckb-async-runtime",
  "ckb-build-info",

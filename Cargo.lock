@@ -1208,7 +1208,6 @@ dependencies = [
 name = "ckb-launcher"
 version = "0.116.1"
 dependencies = [
- "branch-chain-aggregator",
  "branch-chain-producer",
  "ckb-app-config",
  "ckb-async-runtime",

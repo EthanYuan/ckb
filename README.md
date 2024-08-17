@@ -72,7 +72,7 @@ Restarting in the same directory will reuse the data.
 
 ### Aggregator Configure
 
-The following settings are used to configure the `block_assembler` in the `ckb-aggregator.toml` file:
+The following settings are in the `ckb-aggregator.toml` file:
 
 ```toml
 branch_uri = "http://localhost:8114"

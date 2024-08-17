@@ -9,6 +9,7 @@ edition = "2021"
 [dependencies]
 ckb-app-config = { path = "../util/app-config", version = "= 0.116.1" }
 ckb-async-runtime = { path = "../util/runtime", version = "= 0.116.1" }
+ckb-channel = { path = "../util/channel", version = "= 0.116.1" }
 ckb-logger = { path = "../util/logger", version = "= 0.116.1" }
 ckb-stop-handler = { path = "../util/stop-handler", version = "= 0.116.1" }
 

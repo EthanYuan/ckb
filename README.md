@@ -45,7 +45,7 @@ cd branch-dev
 ckb init --chain dev --genesis-message branch-dev
 ```
 
-### Configure 
+### Branch Configure 
 
 The following settings are used to configure the `block_assembler` in the `ckb.toml` file:
 
@@ -69,6 +69,21 @@ In the genesis block, there are two `issued_cells` with sufficient capacity repr
 ckb run --indexer
 ```
 Restarting in the same directory will reuse the data.
+
+### Aggregator Configure
+
+The following settings are used to configure the `block_assembler` in the `ckb-aggregator.toml` file:
+
+```toml
+branch_uri = "http://localhost:8114"
+```
+Fill in the target Branch node.
+
+### Start Aggregator
+
+```shell
+ckb aggregator
+```
 
 ## Use RPC
 

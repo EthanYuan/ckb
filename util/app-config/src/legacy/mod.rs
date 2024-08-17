@@ -59,8 +59,6 @@ pub(crate) struct CKBAppConfig {
     notify: crate::NotifyConfig,
     #[serde(default)]
     indexer_v2: crate::IndexerConfig,
-    #[serde(default)]
-    aggregator: crate::AggregatorConfig,
 }
 
 #[derive(Clone, Debug, Deserialize)]
@@ -81,6 +79,26 @@ pub(crate) struct MinerAppConfig {
     #[serde(default)]
     memory_tracker: crate::MemoryTrackerConfig,
     miner: crate::MinerConfig,
+}
+
+#[derive(Clone, Debug, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub(crate) struct AggregatorAppConfig {
+    data_dir: PathBuf,
+    chain: crate::ChainConfig,
+    logger: crate::LogConfig,
+
+    #[cfg(feature = "with_sentry")]
+    sentry: crate::SentryConfig,
+    #[cfg(not(feature = "with_sentry"))]
+    #[serde(default)]
+    sentry: serde_json::Value,
+
+    #[serde(default)]
+    metrics: crate::MetricsConfig,
+    #[serde(default)]
+    memory_tracker: crate::MemoryTrackerConfig,
+    aggregator: crate::AggregatorConfig,
 }
 
 //
@@ -108,7 +126,6 @@ impl From<CKBAppConfig> for crate::CKBAppConfig {
             alert_signature,
             notify,
             indexer_v2,
-            aggregator,
         } = input;
         #[cfg(not(feature = "with_sentry"))]
         let _ = sentry;
@@ -134,7 +151,6 @@ impl From<CKBAppConfig> for crate::CKBAppConfig {
             alert_signature,
             notify,
             indexer: indexer_v2,
-            aggregator,
         }
     }
 }
@@ -163,6 +179,34 @@ impl From<MinerAppConfig> for crate::MinerAppConfig {
             metrics,
             memory_tracker,
             miner,
+        }
+    }
+}
+
+impl From<AggregatorAppConfig> for crate::AggregatorAppConfig {
+    fn from(input: AggregatorAppConfig) -> Self {
+        let AggregatorAppConfig {
+            data_dir,
+            chain,
+            logger,
+            sentry,
+            metrics,
+            memory_tracker,
+            aggregator,
+        } = input;
+        #[cfg(not(feature = "with_sentry"))]
+        let _ = sentry;
+        Self {
+            bin_name: cli::BIN_NAME.to_owned(),
+            root_dir: Default::default(),
+            data_dir,
+            chain,
+            logger,
+            #[cfg(feature = "with_sentry")]
+            sentry,
+            metrics,
+            memory_tracker,
+            aggregator,
         }
     }
 }
@@ -205,6 +249,12 @@ impl CKBAppConfig {
 }
 
 impl MinerAppConfig {
+    pub(crate) fn deprecated_fields(&self) -> Vec<DeprecatedField> {
+        Vec::new()
+    }
+}
+
+impl AggregatorAppConfig {
     pub(crate) fn deprecated_fields(&self) -> Vec<DeprecatedField> {
         Vec::new()
     }

@@ -270,7 +270,6 @@ impl Aggregator {
             OutPoint::from_slice(&witness_input_type.raw_data()).map_err(|e| {
                 Error::TransactionParseError(format!("get queue from witness error: {}", e))
             })?;
-        info!("Found message queue in leap tx witness");
         Ok((queue_out_point, tx_hash))
     }
 

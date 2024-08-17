@@ -401,6 +401,7 @@ version = "0.1.0"
 dependencies = [
  "ckb-app-config",
  "ckb-async-runtime",
+ "ckb-channel 0.116.1",
  "ckb-gen-types 0.116.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "ckb-hash 0.116.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "ckb-jsonrpc-types 0.116.1 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -717,6 +718,7 @@ name = "ckb-bin"
 version = "0.116.1"
 dependencies = [
  "base64 0.21.7",
+ "branch-chain-aggregator",
  "ckb-app-config",
  "ckb-async-runtime",
  "ckb-build-info",
@@ -1207,7 +1209,6 @@ dependencies = [
 name = "ckb-launcher"
 version = "0.116.1"
 dependencies = [
- "branch-chain-aggregator",
  "branch-chain-producer",
  "ckb-app-config",
  "ckb-async-runtime",

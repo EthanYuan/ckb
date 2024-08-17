@@ -16,6 +16,7 @@ use crate::utils::{
 };
 
 use ckb_app_config::{AggregatorConfig, AssetConfig, LockConfig, ScriptConfig};
+use ckb_channel::Receiver;
 use ckb_logger::{error, info, warn};
 use ckb_sdk::traits::LiveCell;
 use ckb_sdk::{
@@ -24,9 +25,7 @@ use ckb_sdk::{
     traits::{CellQueryOptions, MaturityOption, PrimaryScriptType, QueryOrder},
     Since, SinceType,
 };
-use ckb_stop_handler::{
-    new_crossbeam_exit_rx, new_tokio_exit_rx, register_thread, CancellationToken,
-};
+use ckb_stop_handler::{new_tokio_exit_rx, CancellationToken};
 use ckb_types::H256;
 use ckb_types::{
     bytes::Bytes,
@@ -42,7 +41,6 @@ use std::thread;
 use std::thread::sleep;
 use std::time::Duration;
 
-const THREAD_NAME: &str = "Aggregator";
 const CKB_FEE_RATE_LIMIT: u64 = 5000;
 const CONFIRMATION_THRESHOLD: u64 = 24;
 ///
@@ -98,86 +96,74 @@ impl Aggregator {
     }
 
     /// Run the Aggregator
-    pub fn run(&self) {
-        info!("chain id: {}", self.chain_id);
-
-        // Setup cancellation token
-        let stop_rx = new_crossbeam_exit_rx();
+    pub fn run(&self, stop_rx: Receiver<()>) {
         let poll_interval = self.poll_interval;
         let poll_service: Aggregator = self.clone();
 
-        let aggregator_jh = thread::Builder::new()
-            .name(THREAD_NAME.into())
-            .spawn(move || {
-                loop {
-                    match stop_rx.try_recv() {
-                        Ok(_) => {
-                            info!("Aggregator received exit signal, stopped");
-                            break;
-                        }
-                        Err(crossbeam_channel::TryRecvError::Empty) => {
-                            // No exit signal, continue execution
-                        }
-                        Err(_) => {
-                            info!("Error receiving exit signal");
-                            break;
-                        }
-                    }
-
-                    // get queue data
-                    let rgbpp_requests = poll_service.get_rgbpp_queue_requests();
-                    let (rgbpp_requests, queue_cell) = match rgbpp_requests {
-                        Ok((rgbpp_requests, queue_cell)) => (rgbpp_requests, queue_cell),
-                        Err(e) => {
-                            error!("get RGB++ queue data error: {}", e.to_string());
-                            continue;
-                        }
-                    };
-
-                    let leap_tx =
-                        poll_service.create_leap_tx(rgbpp_requests.clone(), queue_cell.clone());
-                    let leap_tx = match leap_tx {
-                        Ok(leap_tx) => leap_tx,
-                        Err(e) => {
-                            error!("create leap transaction error: {}", e.to_string());
-                            continue;
-                        }
-                    };
-                    match wait_for_tx_confirmation(
-                        poll_service.rgbpp_rpc_client.clone(),
-                        leap_tx,
-                        Duration::from_secs(600),
-                    ) {
-                        Ok(()) => {}
-                        Err(e) => error!("{}", e.to_string()),
-                    }
-
-                    let update_queue_tx =
-                        poll_service.create_clear_queue_tx(rgbpp_requests, queue_cell);
-                    let update_queue_tx = match update_queue_tx {
-                        Ok(update_queue_tx) => update_queue_tx,
-                        Err(e) => {
-                            error!("{}", e.to_string());
-                            continue;
-                        }
-                    };
-                    match wait_for_tx_confirmation(
-                        poll_service.rgbpp_rpc_client.clone(),
-                        update_queue_tx,
-                        Duration::from_secs(600),
-                    ) {
-                        Ok(()) => {}
-                        Err(e) => error!("{}", e.to_string()),
-                    }
-
-                    if let Err(e) = poll_service.scan_rgbpp_request() {
-                        info!("Aggregator: {:?}", e);
-                    }
-                    thread::sleep(poll_interval);
+        loop {
+            match stop_rx.try_recv() {
+                Ok(_) => {
+                    info!("Aggregator received exit signal, stopped");
+                    break;
                 }
-            })
-            .expect("Start aggregator failed!");
-        register_thread(THREAD_NAME, aggregator_jh);
+                Err(crossbeam_channel::TryRecvError::Empty) => {
+                    // No exit signal, continue execution
+                }
+                Err(_) => {
+                    info!("Error receiving exit signal");
+                    break;
+                }
+            }
+
+            // get queue data
+            let rgbpp_requests = poll_service.get_rgbpp_queue_requests();
+            let (rgbpp_requests, queue_cell) = match rgbpp_requests {
+                Ok((rgbpp_requests, queue_cell)) => (rgbpp_requests, queue_cell),
+                Err(e) => {
+                    error!("get RGB++ queue data error: {}", e.to_string());
+                    continue;
+                }
+            };
+
+            let leap_tx = poll_service.create_leap_tx(rgbpp_requests.clone(), queue_cell.clone());
+            let leap_tx = match leap_tx {
+                Ok(leap_tx) => leap_tx,
+                Err(e) => {
+                    error!("create leap transaction error: {}", e.to_string());
+                    continue;
+                }
+            };
+            match wait_for_tx_confirmation(
+                poll_service.rgbpp_rpc_client.clone(),
+                leap_tx,
+                Duration::from_secs(600),
+            ) {
+                Ok(()) => {}
+                Err(e) => error!("{}", e.to_string()),
+            }
+
+            let update_queue_tx = poll_service.create_clear_queue_tx(rgbpp_requests, queue_cell);
+            let update_queue_tx = match update_queue_tx {
+                Ok(update_queue_tx) => update_queue_tx,
+                Err(e) => {
+                    error!("{}", e.to_string());
+                    continue;
+                }
+            };
+            match wait_for_tx_confirmation(
+                poll_service.rgbpp_rpc_client.clone(),
+                update_queue_tx,
+                Duration::from_secs(600),
+            ) {
+                Ok(()) => {}
+                Err(e) => error!("{}", e.to_string()),
+            }
+
+            if let Err(e) = poll_service.scan_rgbpp_request() {
+                info!("Aggregator: {:?}", e);
+            }
+            thread::sleep(poll_interval);
+        }
     }
 
     fn scan_rgbpp_request(&self) -> Result<(), Error> {

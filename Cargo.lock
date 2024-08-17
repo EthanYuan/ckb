@@ -401,6 +401,7 @@ version = "0.1.0"
 dependencies = [
  "ckb-app-config",
  "ckb-async-runtime",
+ "ckb-channel 0.116.1",
  "ckb-gen-types 0.116.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "ckb-hash 0.116.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "ckb-jsonrpc-types 0.116.1 (registry+https://github.com/rust-lang/crates.io-index)",

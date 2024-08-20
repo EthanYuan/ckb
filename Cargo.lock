@@ -28,6 +28,30 @@ dependencies = [
 ]
 
 [[package]]
+name = "aggregator-main"
+version = "0.1.0"
+dependencies = [
+ "ckb-app-config",
+ "ckb-channel 0.116.1",
+ "ckb-gen-types 0.116.1 (registry+https://github.com/rust-lang/crates.io-index)",
+ "ckb-hash 0.116.1",
+ "ckb-jsonrpc-types 0.116.1 (registry+https://github.com/rust-lang/crates.io-index)",
+ "ckb-logger 0.116.1",
+ "ckb-sdk",
+ "ckb-stop-handler",
+ "ckb-types 0.116.1 (registry+https://github.com/rust-lang/crates.io-index)",
+ "crossbeam-channel",
+ "hex",
+ "jsonrpc-core",
+ "molecule",
+ "reqwest 0.12.5",
+ "secp256k1",
+ "serde",
+ "serde_json",
+ "thiserror",
+]
+
+[[package]]
 name = "ahash"
 version = "0.3.8"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -396,31 +420,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "branch-chain-aggregator"
-version = "0.1.0"
-dependencies = [
- "ckb-app-config",
- "ckb-async-runtime",
- "ckb-channel 0.116.1",
- "ckb-gen-types 0.116.1 (registry+https://github.com/rust-lang/crates.io-index)",
- "ckb-hash 0.116.1 (registry+https://github.com/rust-lang/crates.io-index)",
- "ckb-jsonrpc-types 0.116.1 (registry+https://github.com/rust-lang/crates.io-index)",
- "ckb-logger 0.116.1",
- "ckb-sdk",
- "ckb-stop-handler",
- "ckb-types 0.116.1 (registry+https://github.com/rust-lang/crates.io-index)",
- "crossbeam-channel",
- "hex",
- "jsonrpc-core",
- "molecule",
- "reqwest 0.12.5",
- "secp256k1",
- "serde",
- "serde_json",
- "thiserror",
-]
-
-[[package]]
 name = "branch-chain-producer"
 version = "0.1.0"
 dependencies = [
@@ -717,8 +716,8 @@ dependencies = [
 name = "ckb-bin"
 version = "0.116.1"
 dependencies = [
+ "aggregator-main",
  "base64 0.21.7",
- "branch-chain-aggregator",
  "ckb-app-config",
  "ckb-async-runtime",
  "ckb-build-info",

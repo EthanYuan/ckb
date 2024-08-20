@@ -1,4 +1,4 @@
-//! Utility functions for branch-chain-aggregator
+//! Utility functions for aggregator
 
 use crate::error::Error;
 

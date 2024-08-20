@@ -95,7 +95,7 @@ members = [
   "devtools/doc/rpc-gen",
   "ckb-bin",
   "branch-chain-producer",
-  "aggregator/util/error",
+  "aggregator/util/common",
   "aggregator/util/rgbpp-tx", 
   "aggregator/util/branch-tx",
   "aggregator/aggregator-main"]

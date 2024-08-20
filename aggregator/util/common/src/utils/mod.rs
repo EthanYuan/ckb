@@ -1,6 +1,4 @@
-mod key;
-
-pub(crate) use key::*;
+pub mod privkey;
 
 pub const SECP256K1: &str = "secp256k1_blake160";
 pub const XUDT: &str = "xudt";

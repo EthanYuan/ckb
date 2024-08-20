@@ -1,8 +1,10 @@
 use crate::schemas::leap::Request;
-use crate::utils::{get_sighash_script_from_privkey, QUEUE_TYPE, SECP256K1};
 use crate::Aggregator;
 
-use aggregator_error::Error;
+use aggregator_common::{
+    error::Error,
+    utils::{privkey::get_sighash_lock_args_from_privkey, QUEUE_TYPE, SECP256K1},
+};
 use ckb_jsonrpc_types::TransactionView;
 use ckb_logger::{debug, info};
 use ckb_sdk::{
@@ -18,6 +20,8 @@ use ckb_sdk::{
     ScriptGroup,
 };
 use ckb_types::{
+    core::ScriptHashType,
+    h256,
     packed::{Byte32, Bytes as PackedBytes, CellInput, OutPoint, Script},
     prelude::*,
     H256,
@@ -25,6 +29,9 @@ use ckb_types::{
 use molecule::prelude::Entity;
 
 use std::collections::HashMap;
+
+pub const SIGHASH_TYPE_HASH: H256 =
+    h256!("0x9bd7e06f3ecf4be0f2fcd2188b23f1b9fcc88e5d4b65a8637b17723bbda3cce8");
 
 impl Aggregator {
     pub(crate) fn create_clear_queue_tx(
@@ -109,8 +116,15 @@ impl Aggregator {
                 config.fee_rate = fee_rate;
                 config
             };
-            let (capacity_provider_script, capacity_provider_key) =
-                get_sighash_script_from_privkey(self.config.rgbpp_ckb_provider_key_path.clone())?;
+            let (capacity_provider_script_args, capacity_provider_key) =
+                get_sighash_lock_args_from_privkey(
+                    self.config.rgbpp_ckb_provider_key_path.clone(),
+                )?;
+            let capacity_provider_script = Script::new_builder()
+                .code_hash(SIGHASH_TYPE_HASH.pack())
+                .hash_type(ScriptHashType::Type.into())
+                .args(capacity_provider_script_args.pack())
+                .build();
             let mut change_builder = DefaultChangeBuilder::new(
                 &configuration,
                 capacity_provider_script.clone(),
@@ -183,7 +197,7 @@ impl Aggregator {
 
             // sign
             let (_, message_queue_key) =
-                get_sighash_script_from_privkey(self.config.rgbpp_queue_lock_key_path.clone())?;
+                get_sighash_lock_args_from_privkey(self.config.rgbpp_queue_lock_key_path.clone())?;
             TransactionSigner::new(&network_info)
                 .sign_transaction(
                     &mut tx_with_groups,

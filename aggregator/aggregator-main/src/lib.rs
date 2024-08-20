@@ -2,18 +2,18 @@
 
 pub(crate) mod schemas;
 pub(crate) mod transaction;
-pub(crate) mod utils;
 
 use crate::schemas::leap::{
     CrossChainQueue, MessageUnion, Request, RequestLockArgs, Requests, Transfer,
 };
-use crate::utils::QUEUE_TYPE;
-use crate::utils::{
-    decode_udt_amount, encode_udt_amount, get_sighash_script_from_privkey, REQUEST_LOCK, SECP256K1,
-    XUDT,
-};
 
-use aggregator_error::Error;
+use aggregator_common::{
+    error::Error,
+    utils::{
+        decode_udt_amount, encode_udt_amount, privkey::get_sighash_lock_args_from_privkey,
+        QUEUE_TYPE, REQUEST_LOCK, SECP256K1, XUDT,
+    },
+};
 use ckb_app_config::{AggregatorConfig, AssetConfig, LockConfig, ScriptConfig};
 use ckb_channel::Receiver;
 use ckb_logger::{error, info, warn};
@@ -29,6 +29,8 @@ use ckb_types::H256;
 use ckb_types::{
     bytes::Bytes,
     core::FeeRate,
+    core::ScriptHashType,
+    h256,
     packed::{Byte32, CellDep, OutPoint, Script},
     prelude::*,
 };
@@ -42,6 +44,11 @@ use std::time::Duration;
 
 const CKB_FEE_RATE_LIMIT: u64 = 5000;
 const CONFIRMATION_THRESHOLD: u64 = 24;
+
+/// Sighash type hash
+pub const SIGHASH_TYPE_HASH: H256 =
+    h256!("0x9bd7e06f3ecf4be0f2fcd2188b23f1b9fcc88e5d4b65a8637b17723bbda3cce8");
+
 ///
 #[derive(Clone)]
 pub struct Aggregator {
@@ -229,8 +236,13 @@ impl Aggregator {
 
     pub(crate) fn build_message_queue_cell_search_option(&self) -> Result<CellQueryOptions, Error> {
         let message_queue_type = self.get_rgbpp_script(QUEUE_TYPE)?;
-        let (message_queue_lock, _) =
-            get_sighash_script_from_privkey(self.config.rgbpp_queue_lock_key_path.clone())?;
+        let (message_queue_lock_args, _) =
+            get_sighash_lock_args_from_privkey(self.config.rgbpp_queue_lock_key_path.clone())?;
+        let message_queue_lock = Script::new_builder()
+            .code_hash(SIGHASH_TYPE_HASH.pack())
+            .hash_type(ScriptHashType::Type.into())
+            .args(message_queue_lock_args.pack())
+            .build();
 
         let cell_query_option = CellQueryOptions {
             primary_script: message_queue_type,

@@ -1,8 +1,10 @@
 use crate::schemas::leap::{MessageUnion, Request};
-use crate::utils::{get_sighash_script_from_privkey, SECP256K1, XUDT};
 use crate::{encode_udt_amount, Aggregator};
 
-use aggregator_error::Error;
+use aggregator_common::{
+    error::Error,
+    utils::{privkey::get_sighash_lock_args_from_privkey, SECP256K1, XUDT},
+};
 use ckb_jsonrpc_types::TransactionView;
 use ckb_logger::info;
 use ckb_sdk::CkbRpcClient;
@@ -24,6 +26,8 @@ use ckb_sdk::{
 };
 use ckb_types::{
     bytes::Bytes,
+    core::ScriptHashType,
+    h256,
     packed::{
         Byte32, Bytes as PackedBytes, CellInput, CellOutput, OutPoint, Script, Transaction,
         WitnessArgs,
@@ -34,6 +38,9 @@ use ckb_types::{
 use molecule::prelude::Entity;
 
 use std::collections::HashMap;
+
+pub const SIGHASH_TYPE_HASH: H256 =
+    h256!("0x9bd7e06f3ecf4be0f2fcd2188b23f1b9fcc88e5d4b65a8637b17723bbda3cce8");
 
 impl Aggregator {
     pub(crate) fn create_leap_tx(
@@ -183,9 +190,15 @@ impl Aggregator {
             config.fee_rate = fee_rate;
             config
         };
-        let (capacity_provider_script, capacity_provider_key) = get_sighash_script_from_privkey(
-            self.config.branch_chain_capacity_provider_key_path.clone(),
-        )?;
+        let (capacity_provider_script_args, capacity_provider_key) =
+            get_sighash_lock_args_from_privkey(
+                self.config.branch_chain_capacity_provider_key_path.clone(),
+            )?;
+        let capacity_provider_script = Script::new_builder()
+            .code_hash(SIGHASH_TYPE_HASH.pack())
+            .hash_type(ScriptHashType::Type.into())
+            .args(capacity_provider_script_args.pack())
+            .build();
         let mut change_builder =
             DefaultChangeBuilder::new(&configuration, capacity_provider_script.clone(), Vec::new());
         change_builder.init(&mut tx_builder);
@@ -235,7 +248,7 @@ impl Aggregator {
         })?;
 
         // sign
-        let (_, token_manager_key) = get_sighash_script_from_privkey(
+        let (_, token_manager_key) = get_sighash_lock_args_from_privkey(
             self.config.branch_chain_token_manager_lock_key_path.clone(),
         )?;
         TransactionSigner::new(&network_info)
@@ -335,9 +348,14 @@ impl Aggregator {
     }
 
     fn build_token_manager_cell_search_option(&self) -> Result<CellQueryOptions, Error> {
-        let (token_manager_lock, _) = get_sighash_script_from_privkey(
+        let (token_manager_lock_args, _) = get_sighash_lock_args_from_privkey(
             self.config.branch_chain_token_manager_lock_key_path.clone(),
         )?;
+        let token_manager_lock = Script::new_builder()
+            .code_hash(SIGHASH_TYPE_HASH.pack())
+            .hash_type(ScriptHashType::Type.into())
+            .args(token_manager_lock_args.pack())
+            .build();
 
         let cell_query_option = CellQueryOptions {
             primary_script: token_manager_lock,

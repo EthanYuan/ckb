@@ -1,5 +1,3 @@
-#![allow(missing_docs)]
-
 #[allow(clippy::enum_variant_names)]
 #[derive(thiserror::Error, Debug)]
 #[repr(i32)]

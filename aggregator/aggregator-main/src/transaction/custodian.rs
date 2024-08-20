@@ -2,7 +2,7 @@ use crate::schemas::leap::{Message, MessageUnion, Request, RequestContent, Reque
 use crate::Aggregator;
 use crate::Error;
 use crate::{
-    encode_udt_amount, get_sighash_script_from_privkey, RequestType, QUEUE_TYPE, REQUEST_LOCK,
+    encode_udt_amount, get_sighash_lock_args_from_privkey, RequestType, QUEUE_TYPE, REQUEST_LOCK,
     SECP256K1, XUDT,
 };
 
@@ -23,6 +23,8 @@ use ckb_sdk::{
 };
 use ckb_types::{
     bytes::Bytes,
+    core::ScriptHashType,
+    h256,
     packed::{Byte32, Bytes as PackedBytes, CellInput, CellOutput, Script, WitnessArgs},
     prelude::*,
     H256,
@@ -30,6 +32,9 @@ use ckb_types::{
 use molecule::prelude::Byte;
 
 use std::collections::HashMap;
+
+pub const SIGHASH_TYPE_HASH: H256 =
+    h256!("0x9bd7e06f3ecf4be0f2fcd2188b23f1b9fcc88e5d4b65a8637b17723bbda3cce8");
 
 impl Aggregator {
     pub(crate) fn create_custodian_tx(
@@ -73,8 +78,13 @@ impl Aggregator {
         let queue_witness = Requests::new_builder().set(requests).build();
 
         // build custodian lock
-        let (custodian_lock, _) =
-            get_sighash_script_from_privkey(self.config.rgbpp_custodian_lock_key_path.clone())?;
+        let (custodian_lock_args, _) =
+            get_sighash_lock_args_from_privkey(self.config.rgbpp_custodian_lock_key_path.clone())?;
+        let custodian_lock = Script::new_builder()
+            .code_hash(SIGHASH_TYPE_HASH.pack())
+            .hash_type(ScriptHashType::Type.into())
+            .args(custodian_lock_args.pack())
+            .build();
 
         // build inputs
         let inputs: Vec<CellInput> = std::iter::once(queue_cell.out_point.clone())
@@ -166,8 +176,13 @@ impl Aggregator {
             config.fee_rate = fee_rate;
             config
         };
-        let (capacity_provider_script, capacity_provider_key) =
-            get_sighash_script_from_privkey(self.config.rgbpp_ckb_provider_key_path.clone())?;
+        let (capacity_provider_script_args, capacity_provider_key) =
+            get_sighash_lock_args_from_privkey(self.config.rgbpp_ckb_provider_key_path.clone())?;
+        let capacity_provider_script = Script::new_builder()
+            .code_hash(SIGHASH_TYPE_HASH.pack())
+            .hash_type(ScriptHashType::Type.into())
+            .args(capacity_provider_script_args.pack())
+            .build();
         let mut change_builder =
             DefaultChangeBuilder::new(&configuration, capacity_provider_script.clone(), Vec::new());
         change_builder.init(&mut tx_builder);
@@ -242,7 +257,7 @@ impl Aggregator {
 
         // sign
         let (_, message_queue_key) =
-            get_sighash_script_from_privkey(self.config.rgbpp_queue_lock_key_path.clone())?;
+            get_sighash_lock_args_from_privkey(self.config.rgbpp_queue_lock_key_path.clone())?;
         TransactionSigner::new(&network_info)
             .sign_transaction(
                 &mut tx_with_groups,

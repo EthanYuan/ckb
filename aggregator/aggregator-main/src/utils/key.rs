@@ -1,7 +1,6 @@
 //! Utility functions for aggregator
 
-use crate::error::Error;
-
+use aggregator_error::Error;
 use ckb_hash::blake2b_256;
 use ckb_types::{
     bytes::Bytes,

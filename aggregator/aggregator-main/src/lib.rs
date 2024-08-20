@@ -1,11 +1,9 @@
 //! Branch Chain Aggregator
 
-pub(crate) mod error;
 pub(crate) mod schemas;
 pub(crate) mod transaction;
 pub(crate) mod utils;
 
-use crate::error::Error;
 use crate::schemas::leap::{
     CrossChainQueue, MessageUnion, Request, RequestLockArgs, Requests, Transfer,
 };
@@ -15,13 +13,14 @@ use crate::utils::{
     XUDT,
 };
 
+use aggregator_error::Error;
 use ckb_app_config::{AggregatorConfig, AssetConfig, LockConfig, ScriptConfig};
 use ckb_channel::Receiver;
 use ckb_logger::{error, info, warn};
-use ckb_sdk::traits::LiveCell;
 use ckb_sdk::{
     rpc::ckb_indexer::{Cell, Order},
     rpc::CkbRpcClient as RpcClient,
+    traits::LiveCell,
     traits::{CellQueryOptions, MaturityOption, PrimaryScriptType, QueryOrder},
     Since, SinceType,
 };

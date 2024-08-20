@@ -1,8 +1,8 @@
-use crate::error::Error;
 use crate::schemas::leap::Request;
 use crate::utils::{get_sighash_script_from_privkey, QUEUE_TYPE, SECP256K1};
 use crate::Aggregator;
 
+use aggregator_error::Error;
 use ckb_jsonrpc_types::TransactionView;
 use ckb_logger::{debug, info};
 use ckb_sdk::{

@@ -28,9 +28,22 @@ dependencies = [
 ]
 
 [[package]]
+name = "aggregator-branch-tx"
+version = "0.1.0"
+
+[[package]]
+name = "aggregator-error"
+version = "0.1.0"
+dependencies = [
+ "thiserror",
+]
+
+[[package]]
 name = "aggregator-main"
 version = "0.1.0"
 dependencies = [
+ "aggregator-error",
+ "aggregator-rgbpp-tx",
  "ckb-app-config",
  "ckb-channel 0.116.1",
  "ckb-gen-types 0.116.1 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -49,6 +62,21 @@ dependencies = [
  "serde",
  "serde_json",
  "thiserror",
+]
+
+[[package]]
+name = "aggregator-rgbpp-tx"
+version = "0.1.0"
+dependencies = [
+ "aggregator-error",
+ "ckb-gen-types 0.116.1 (registry+https://github.com/rust-lang/crates.io-index)",
+ "ckb-jsonrpc-types 0.116.1 (registry+https://github.com/rust-lang/crates.io-index)",
+ "ckb-logger 0.116.1 (registry+https://github.com/rust-lang/crates.io-index)",
+ "ckb-sdk",
+ "ckb-types 0.116.1 (registry+https://github.com/rust-lang/crates.io-index)",
+ "molecule",
+ "serde",
+ "serde_json",
 ]
 
 [[package]]

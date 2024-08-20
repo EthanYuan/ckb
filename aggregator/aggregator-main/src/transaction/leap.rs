@@ -1,8 +1,8 @@
-use crate::error::Error;
 use crate::schemas::leap::{MessageUnion, Request};
 use crate::utils::{get_sighash_script_from_privkey, SECP256K1, XUDT};
 use crate::{encode_udt_amount, Aggregator};
 
+use aggregator_error::Error;
 use ckb_jsonrpc_types::TransactionView;
 use ckb_logger::info;
 use ckb_sdk::CkbRpcClient;

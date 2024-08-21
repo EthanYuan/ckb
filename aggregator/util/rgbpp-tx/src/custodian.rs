@@ -1,8 +1,7 @@
 use crate::schemas::leap::{
-    CrossChainQueue, Message, MessageUnion, Request, RequestContent, RequestLockArgs, Requests,
-    Transfer,
+    Message, MessageUnion, Request, RequestContent, RequestLockArgs, Requests, Transfer,
 };
-use crate::RgbppTxBuilder;
+use crate::{RgbppTxBuilder, CONFIRMATION_THRESHOLD, SIGHASH_TYPE_HASH};
 
 use aggregator_common::{
     error::Error,
@@ -13,12 +12,12 @@ use aggregator_common::{
     },
 };
 use ckb_jsonrpc_types::TransactionView;
-use ckb_logger::{debug, info, warn};
+use ckb_logger::{debug, info};
 use ckb_sdk::{
     core::TransactionBuilder,
     rpc::ckb_indexer::{Cell, Order},
     rpc::CkbRpcClient as RpcClient,
-    traits::{CellQueryOptions, LiveCell, MaturityOption, PrimaryScriptType, QueryOrder},
+    traits::{CellQueryOptions, LiveCell},
     transaction::{
         builder::{ChangeBuilder, DefaultChangeBuilder},
         handler::HandlerContexts,
@@ -32,9 +31,8 @@ use ckb_sdk::{
 use ckb_stop_handler::{new_tokio_exit_rx, CancellationToken};
 use ckb_types::{
     bytes::Bytes,
-    core::{FeeRate, ScriptHashType},
-    h256,
-    packed::{Byte32, Bytes as PackedBytes, CellDep, CellInput, CellOutput, Script, WitnessArgs},
+    core::ScriptHashType,
+    packed::{Byte32, Bytes as PackedBytes, CellInput, CellOutput, Script, WitnessArgs},
     prelude::*,
     H256,
 };
@@ -44,15 +42,8 @@ use std::collections::HashMap;
 use std::thread::sleep;
 use std::time::Duration;
 
-/// Sighash type hash
-pub const SIGHASH_TYPE_HASH: H256 =
-    h256!("0x9bd7e06f3ecf4be0f2fcd2188b23f1b9fcc88e5d4b65a8637b17723bbda3cce8");
-/// CKB fee rate limit
-const CKB_FEE_RATE_LIMIT: u64 = 5000;
-const CONFIRMATION_THRESHOLD: u64 = 24;
-
 impl RgbppTxBuilder {
-    pub fn scan_rgbpp_request(&self) -> Result<(), Error> {
+    pub fn collect_rgbpp_request(&self) -> Result<(), Error> {
         info!("Scan RGB++ Request ...");
 
         let stop: CancellationToken = new_tokio_exit_rx();
@@ -350,100 +341,7 @@ impl RgbppTxBuilder {
         Ok(tx_hash)
     }
 
-    fn get_rgbpp_queue_cell(&self) -> Result<(Cell, CrossChainQueue), Error> {
-        info!("Scan RGB++ Message Queue ...");
-
-        let queue_cell_search_option = self.build_message_queue_cell_search_option()?;
-        let queue_cell = self
-            .rgbpp_rpc_client
-            .get_cells(queue_cell_search_option.into(), Order::Asc, 1.into(), None)
-            .map_err(|e| Error::LiveCellNotFound(e.to_string()))?;
-        if queue_cell.objects.len() != 1 {
-            return Err(Error::LiveCellNotFound(format!(
-                "Queue cell found: {}",
-                queue_cell.objects.len()
-            )));
-        }
-        info!("Found {} queue cell", queue_cell.objects.len());
-        let queue_cell = queue_cell.objects[0].clone();
-
-        let queue_live_cell: LiveCell = queue_cell.clone().into();
-        let queue_data = queue_live_cell.output_data;
-        let queue = CrossChainQueue::from_slice(&queue_data)
-            .map_err(|e| Error::QueueCellDataDecodeError(e.to_string()))?;
-
-        Ok((queue_cell, queue))
-    }
-
-    pub(crate) fn build_message_queue_cell_search_option(&self) -> Result<CellQueryOptions, Error> {
-        let message_queue_type = self.get_rgbpp_script(QUEUE_TYPE)?;
-        let (message_queue_lock_args, _) =
-            get_sighash_lock_args_from_privkey(self.rgbpp_queue_lock_key_path.clone())?;
-        let message_queue_lock = Script::new_builder()
-            .code_hash(SIGHASH_TYPE_HASH.pack())
-            .hash_type(ScriptHashType::Type.into())
-            .args(message_queue_lock_args.pack())
-            .build();
-
-        let cell_query_option = CellQueryOptions {
-            primary_script: message_queue_type,
-            primary_type: PrimaryScriptType::Type,
-            with_data: Some(true),
-            secondary_script: Some(message_queue_lock),
-            secondary_script_len_range: None,
-            data_len_range: None,
-            capacity_range: None,
-            block_range: None,
-            order: QueryOrder::Asc,
-            limit: Some(1),
-            maturity: MaturityOption::Mature,
-            min_total_capacity: 1,
-            script_search_mode: None,
-        };
-        Ok(cell_query_option)
-    }
-
-    fn get_rgbpp_cell_dep(&self, script_name: &str) -> Result<CellDep, Error> {
-        self.rgbpp_scripts
-            .get(script_name)
-            .map(|script_info| script_info.cell_dep.clone())
-            .ok_or_else(|| Error::MissingScriptInfo(script_name.to_string()))
-    }
-
-    fn get_rgbpp_script(&self, script_name: &str) -> Result<Script, Error> {
-        self.rgbpp_scripts
-            .get(script_name)
-            .map(|script_info| script_info.script.clone())
-            .ok_or_else(|| Error::MissingScriptInfo(script_name.to_string()))
-    }
-
-    fn fee_rate(&self) -> Result<u64, Error> {
-        let value = {
-            let dynamic = self
-                .rgbpp_rpc_client
-                .get_fee_rate_statistics(None)
-                .map_err(|e| Error::RpcError(format!("get dynamic fee rate error: {}", e)))?
-                .ok_or_else(|| Error::RpcError("get dynamic fee rate error: None".to_string()))
-                .map(|resp| resp.median)
-                .map(Into::into)
-                .map_err(|e| Error::RpcError(format!("get dynamic fee rate error: {}", e)))?;
-            info!("CKB fee rate: {} (dynamic)", FeeRate(dynamic));
-            if dynamic > CKB_FEE_RATE_LIMIT {
-                warn!(
-                    "dynamic CKB fee rate {} is too large, it seems unreasonable;\
-                so the upper limit {} will be used",
-                    FeeRate(dynamic),
-                    FeeRate(CKB_FEE_RATE_LIMIT)
-                );
-                CKB_FEE_RATE_LIMIT
-            } else {
-                dynamic
-            }
-        };
-        Ok(value)
-    }
-
-    pub(crate) fn build_request_cell_search_option(&self) -> Result<CellQueryOptions, Error> {
+    fn build_request_cell_search_option(&self) -> Result<CellQueryOptions, Error> {
         let request_script = self.get_rgbpp_script(REQUEST_LOCK)?;
         Ok(CellQueryOptions::new_lock(request_script))
     }

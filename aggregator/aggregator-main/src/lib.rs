@@ -147,32 +147,31 @@ impl Aggregator {
                 Err(e) => error!("{}", e.to_string()),
             }
 
-            let update_queue_tx = poll_service.create_clear_queue_tx(rgbpp_requests, queue_cell);
-            let update_queue_tx = match update_queue_tx {
-                Ok(update_queue_tx) => update_queue_tx,
-                Err(e) => {
-                    error!("{}", e.to_string());
-                    continue;
+            if !rgbpp_requests.is_empty() {
+                let update_queue_tx = poll_service.rgbpp_tx_builder.create_clear_queue_tx();
+                let update_queue_tx = match update_queue_tx {
+                    Ok(update_queue_tx) => update_queue_tx,
+                    Err(e) => {
+                        error!("{}", e.to_string());
+                        continue;
+                    }
+                };
+                match wait_for_tx_confirmation(
+                    poll_service.rgbpp_rpc_client.clone(),
+                    update_queue_tx,
+                    Duration::from_secs(600),
+                ) {
+                    Ok(()) => {}
+                    Err(e) => error!("{}", e.to_string()),
                 }
-            };
-            match wait_for_tx_confirmation(
-                poll_service.rgbpp_rpc_client.clone(),
-                update_queue_tx,
-                Duration::from_secs(600),
-            ) {
-                Ok(()) => {}
-                Err(e) => error!("{}", e.to_string()),
             }
 
-            if let Err(e) = poll_service.scan_rgbpp_request() {
+            if let Err(e) = poll_service.rgbpp_tx_builder.collect_rgbpp_request() {
                 info!("Aggregator: {:?}", e);
             }
+
             thread::sleep(poll_interval);
         }
-    }
-
-    fn scan_rgbpp_request(&self) -> Result<(), Error> {
-        self.rgbpp_tx_builder.scan_rgbpp_request()
     }
 
     pub(crate) fn build_message_queue_cell_search_option(&self) -> Result<CellQueryOptions, Error> {
@@ -258,13 +257,6 @@ impl Aggregator {
             .map_err(|e| Error::QueueCellDataDecodeError(e.to_string()))?;
 
         Ok((queue_cell, queue))
-    }
-
-    fn get_rgbpp_cell_dep(&self, script_name: &str) -> Result<CellDep, Error> {
-        self.rgbpp_scripts
-            .get(script_name)
-            .map(|script_info| script_info.cell_dep.clone())
-            .ok_or_else(|| Error::MissingScriptInfo(script_name.to_string()))
     }
 
     fn _get_branch_cell_dep(&self, script_name: &str) -> Result<CellDep, Error> {

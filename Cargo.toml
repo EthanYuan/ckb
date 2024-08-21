@@ -97,7 +97,6 @@ members = [
   "branch-chain-producer",
   "aggregator/util/common",
   "aggregator/util/rgbpp-tx", 
-  "aggregator/util/branch-tx",
   "aggregator/aggregator-main"]
 
 [workspace.dependencies]

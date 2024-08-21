@@ -1,4 +1,5 @@
 use crate::schemas::leap::{MessageUnion, Request};
+use crate::transaction::SIGHASH_TYPE_HASH;
 use crate::{encode_udt_amount, Aggregator};
 
 use aggregator_common::{
@@ -27,7 +28,6 @@ use ckb_sdk::{
 use ckb_types::{
     bytes::Bytes,
     core::ScriptHashType,
-    h256,
     packed::{
         Byte32, Bytes as PackedBytes, CellInput, CellOutput, OutPoint, Script, Transaction,
         WitnessArgs,
@@ -38,9 +38,6 @@ use ckb_types::{
 use molecule::prelude::Entity;
 
 use std::collections::HashMap;
-
-pub const SIGHASH_TYPE_HASH: H256 =
-    h256!("0x9bd7e06f3ecf4be0f2fcd2188b23f1b9fcc88e5d4b65a8637b17723bbda3cce8");
 
 impl Aggregator {
     pub(crate) fn create_leap_tx(
@@ -139,8 +136,8 @@ impl Aggregator {
         }
 
         // cell deps
-        let secp256k1_cell_dep = self._get_branch_cell_dep(SECP256K1)?;
-        let xudt_cell_dep = self._get_branch_cell_dep(XUDT)?;
+        let secp256k1_cell_dep = self.get_branch_cell_dep(SECP256K1)?;
+        let xudt_cell_dep = self.get_branch_cell_dep(XUDT)?;
 
         // build transaction
         let mut tx_builder = TransactionBuilder::default();

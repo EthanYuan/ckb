@@ -14,7 +14,6 @@ ckb-app-config = { path = "../../util/app-config", version = "= 0.116.1" }
 ckb-channel = { path = "../../util/channel", version = "= 0.116.1" }
 ckb-hash = { path = "../../util/hash", version = "= 0.116.1" }
 ckb-logger = { path = "../../util/logger", version = "= 0.116.1" }
-ckb-stop-handler = { path = "../../util/stop-handler", version = "= 0.116.1" }
 
 ckb-gen-types = { version = "=0.116.1", default-features = false }
 ckb-jsonrpc-types = "=0.116.1"

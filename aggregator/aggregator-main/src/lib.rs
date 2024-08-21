@@ -3,17 +3,13 @@
 pub(crate) mod schemas;
 pub(crate) mod transaction;
 
-use crate::schemas::leap::{
-    CrossChainQueue, MessageUnion, Request, RequestLockArgs, Requests, Transfer,
-};
+use crate::schemas::leap::{CrossChainQueue, Request, Requests};
 
 use aggregator_common::{
     error::Error,
-    utils::{
-        decode_udt_amount, encode_udt_amount, privkey::get_sighash_lock_args_from_privkey,
-        QUEUE_TYPE, REQUEST_LOCK, SECP256K1, XUDT,
-    },
+    utils::{encode_udt_amount, privkey::get_sighash_lock_args_from_privkey, QUEUE_TYPE},
 };
+use aggregator_rgbpp_tx::RgbppTxBuilder;
 use ckb_app_config::{AggregatorConfig, AssetConfig, LockConfig, ScriptConfig};
 use ckb_channel::Receiver;
 use ckb_logger::{error, info, warn};
@@ -22,28 +18,22 @@ use ckb_sdk::{
     rpc::CkbRpcClient as RpcClient,
     traits::LiveCell,
     traits::{CellQueryOptions, MaturityOption, PrimaryScriptType, QueryOrder},
-    Since, SinceType,
 };
-use ckb_stop_handler::{new_tokio_exit_rx, CancellationToken};
 use ckb_types::H256;
 use ckb_types::{
-    bytes::Bytes,
     core::FeeRate,
     core::ScriptHashType,
     h256,
     packed::{Byte32, CellDep, OutPoint, Script},
     prelude::*,
 };
-use molecule::prelude::Byte;
 
 use std::collections::{HashMap, HashSet};
 use std::str::FromStr;
-use std::thread;
-use std::thread::sleep;
+use std::thread::{self, sleep};
 use std::time::Duration;
 
 const CKB_FEE_RATE_LIMIT: u64 = 5000;
-const CONFIRMATION_THRESHOLD: u64 = 24;
 
 /// Sighash type hash
 pub const SIGHASH_TYPE_HASH: H256 =
@@ -52,7 +42,6 @@ pub const SIGHASH_TYPE_HASH: H256 =
 ///
 #[derive(Clone)]
 pub struct Aggregator {
-    chain_id: String,
     config: AggregatorConfig,
     poll_interval: Duration,
     rgbpp_rpc_client: RpcClient,
@@ -61,6 +50,8 @@ pub struct Aggregator {
     branch_scripts: HashMap<String, ScriptInfo>,
     rgbpp_assets: HashMap<H256, AssetInfo>,
     rgbpp_locks: HashMap<H256, Script>,
+
+    rgbpp_tx_builder: RgbppTxBuilder,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -85,11 +76,18 @@ pub(crate) enum RequestType {
 
 impl Aggregator {
     /// Create an Aggregator
-    pub fn new(config: AggregatorConfig, poll_interval: Duration, chain_id: String) -> Self {
+    pub fn new(config: AggregatorConfig, poll_interval: Duration, branch_chain_id: String) -> Self {
         let rgbpp_rpc_client = RpcClient::new(&config.rgbpp_uri);
         let branch_rpc_client = RpcClient::new(&config.branch_uri);
+        let rgbpp_tx_builder = RgbppTxBuilder::new(
+            branch_chain_id.clone(),
+            config.rgbpp_uri.clone(),
+            config.rgbpp_scripts.clone(),
+            config.rgbpp_custodian_lock_key_path.clone(),
+            config.branch_chain_capacity_provider_key_path.clone(),
+            config.branch_chain_token_manager_lock_key_path.clone(),
+        );
         Aggregator {
-            chain_id,
             config: config.clone(),
             poll_interval,
             rgbpp_rpc_client,
@@ -98,6 +96,7 @@ impl Aggregator {
             branch_scripts: get_script_map(config.branch_scripts),
             rgbpp_assets: get_asset_map(config.rgbpp_assets),
             rgbpp_locks: get_rgbpp_locks(config.rgbpp_asset_locks),
+            rgbpp_tx_builder,
         }
     }
 
@@ -173,65 +172,7 @@ impl Aggregator {
     }
 
     fn scan_rgbpp_request(&self) -> Result<(), Error> {
-        info!("Scan RGB++ Request ...");
-
-        let stop: CancellationToken = new_tokio_exit_rx();
-
-        let request_search_option = self.build_request_cell_search_option()?;
-        let mut cursor = None;
-        let limit = 10;
-
-        loop {
-            if stop.is_cancelled() {
-                info!("Aggregator scan_rgbpp_request received exit signal, exiting now");
-                return Ok(());
-            }
-
-            let request_cells = self
-                .rgbpp_rpc_client
-                .get_cells(
-                    request_search_option.clone().into(),
-                    Order::Asc,
-                    limit.into(),
-                    cursor,
-                )
-                .map_err(|e| Error::LiveCellNotFound(e.to_string()))?;
-
-            if request_cells.objects.is_empty() {
-                info!("No more request cells found");
-                break;
-            }
-            cursor = Some(request_cells.last_cursor);
-
-            info!("Found {} request cells", request_cells.objects.len());
-            let tip = self
-                .rgbpp_rpc_client
-                .get_tip_block_number()
-                .map_err(|e| Error::RpcError(format!("get tip block number error: {}", e)))?
-                .value();
-            let cells_with_messge = self.check_request(request_cells.objects.clone(), tip);
-            info!("Found {} valid request cells", cells_with_messge.len());
-            if cells_with_messge.is_empty() {
-                break;
-            }
-
-            let custodian_tx = self.create_custodian_tx(cells_with_messge)?;
-            match wait_for_tx_confirmation(
-                self.rgbpp_rpc_client.clone(),
-                custodian_tx,
-                Duration::from_secs(15),
-            ) {
-                Ok(()) => info!("Transaction confirmed"),
-                Err(e) => info!("{}", e.to_string()),
-            }
-        }
-
-        Ok(())
-    }
-
-    pub(crate) fn build_request_cell_search_option(&self) -> Result<CellQueryOptions, Error> {
-        let request_script = self.get_rgbpp_script(REQUEST_LOCK)?;
-        Ok(CellQueryOptions::new_lock(request_script))
+        self.rgbpp_tx_builder.scan_rgbpp_request()
     }
 
     pub(crate) fn build_message_queue_cell_search_option(&self) -> Result<CellQueryOptions, Error> {
@@ -317,81 +258,6 @@ impl Aggregator {
             .map_err(|e| Error::QueueCellDataDecodeError(e.to_string()))?;
 
         Ok((queue_cell, queue))
-    }
-
-    fn check_request(&self, cells: Vec<Cell>, tip: u64) -> Vec<(Cell, Transfer)> {
-        cells
-            .into_iter()
-            .filter_map(|cell| {
-                let live_cell: LiveCell = cell.clone().into();
-                RequestLockArgs::from_slice(&live_cell.output.lock().args().raw_data())
-                    .ok()
-                    .and_then(|args| {
-                        let target_request_type_hash = args.request_type_hash();
-                        info!("target_request_type_hash: {:?}", target_request_type_hash);
-
-                        let timeout: u64 = args.timeout().unpack();
-                        let since = Since::from_raw_value(timeout);
-                        let since_check =
-                            since.extract_metric().map_or(false, |(since_type, value)| {
-                                match since_type {
-                                    SinceType::BlockNumber => {
-                                        let threshold = if since.is_absolute() {
-                                            value
-                                        } else {
-                                            cell.block_number.value() + value
-                                        };
-                                        tip + CONFIRMATION_THRESHOLD < threshold
-                                    }
-                                    _ => false,
-                                }
-                            });
-
-                        let content = args.content();
-                        let target_chain_id: Bytes = content.target_chain_id().raw_data();
-                        info!("target_chain_id: {:?}", target_chain_id);
-                        let request_type = content.request_type();
-
-                        let (check_message, transfer) = {
-                            let message = content.message();
-                            let message_union = message.to_enum();
-                            match message_union {
-                                MessageUnion::Transfer(transfer) => {
-                                    let transfer_amount: u128 = transfer.amount().unpack();
-                                    let check_message = cell
-                                        .clone()
-                                        .output_data
-                                        .and_then(|data| decode_udt_amount(data.as_bytes()))
-                                        .map_or(false, |amount| {
-                                            info!(
-                                                "original amount: {:?}, transfer amount: {:?}",
-                                                amount, transfer_amount
-                                            );
-                                            transfer_amount <= amount
-                                        });
-                                    (check_message, transfer)
-                                }
-                            }
-                        };
-
-                        let request_type_hash = self
-                            .rgbpp_scripts
-                            .get(QUEUE_TYPE)
-                            .map(|script_info| script_info.script.calc_script_hash());
-
-                        if Some(target_request_type_hash) == request_type_hash
-                            && self.chain_id.clone() == target_chain_id
-                            && request_type == Byte::new(RequestType::CkbToBranch as u8)
-                            && check_message
-                            && since_check
-                        {
-                            Some((cell, transfer))
-                        } else {
-                            None
-                        }
-                    })
-            })
-            .collect()
     }
 
     fn get_rgbpp_cell_dep(&self, script_name: &str) -> Result<CellDep, Error> {

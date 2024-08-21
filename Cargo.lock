@@ -54,7 +54,6 @@ dependencies = [
  "ckb-jsonrpc-types 0.116.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "ckb-logger 0.116.1",
  "ckb-sdk",
- "ckb-stop-handler",
  "ckb-types 0.116.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "crossbeam-channel",
  "hex",
@@ -72,10 +71,12 @@ name = "aggregator-rgbpp-tx"
 version = "0.1.0"
 dependencies = [
  "aggregator-common",
+ "ckb-app-config",
  "ckb-gen-types 0.116.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "ckb-jsonrpc-types 0.116.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "ckb-logger 0.116.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "ckb-sdk",
+ "ckb-stop-handler",
  "ckb-types 0.116.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "molecule",
  "serde",

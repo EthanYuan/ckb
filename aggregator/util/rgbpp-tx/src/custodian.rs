@@ -1,16 +1,23 @@
-use crate::schemas::leap::{Message, MessageUnion, Request, RequestContent, Requests, Transfer};
-use crate::Aggregator;
-use crate::Error;
-use crate::{
-    encode_udt_amount, get_sighash_script_from_privkey, RequestType, QUEUE_TYPE, REQUEST_LOCK,
-    SECP256K1, XUDT,
+use crate::schemas::leap::{
+    Message, MessageUnion, Request, RequestContent, RequestLockArgs, Requests, Transfer,
 };
+use crate::{RgbppTxBuilder, CONFIRMATION_THRESHOLD, SIGHASH_TYPE_HASH};
 
+use aggregator_common::{
+    error::Error,
+    types::RequestType,
+    utils::{
+        decode_udt_amount, encode_udt_amount, privkey::get_sighash_lock_args_from_privkey,
+        QUEUE_TYPE, REQUEST_LOCK, SECP256K1, XUDT,
+    },
+};
 use ckb_jsonrpc_types::TransactionView;
 use ckb_logger::{debug, info};
 use ckb_sdk::{
     core::TransactionBuilder,
-    rpc::ckb_indexer::Cell,
+    rpc::ckb_indexer::{Cell, Order},
+    rpc::CkbRpcClient as RpcClient,
+    traits::{CellQueryOptions, LiveCell},
     transaction::{
         builder::{ChangeBuilder, DefaultChangeBuilder},
         handler::HandlerContexts,
@@ -19,10 +26,12 @@ use ckb_sdk::{
         TransactionBuilderConfiguration,
     },
     types::{NetworkInfo, NetworkType, TransactionWithScriptGroups},
-    ScriptGroup,
+    ScriptGroup, Since, SinceType,
 };
+use ckb_stop_handler::{new_tokio_exit_rx, CancellationToken};
 use ckb_types::{
     bytes::Bytes,
+    core::ScriptHashType,
     packed::{Byte32, Bytes as PackedBytes, CellInput, CellOutput, Script, WitnessArgs},
     prelude::*,
     H256,
@@ -30,12 +39,68 @@ use ckb_types::{
 use molecule::prelude::Byte;
 
 use std::collections::HashMap;
+use std::thread::sleep;
+use std::time::Duration;
 
-impl Aggregator {
-    pub(crate) fn create_custodian_tx(
-        &self,
-        request_cells: Vec<(Cell, Transfer)>,
-    ) -> Result<H256, Error> {
+impl RgbppTxBuilder {
+    pub fn collect_rgbpp_request(&self) -> Result<(), Error> {
+        info!("Scan RGB++ Request ...");
+
+        let stop: CancellationToken = new_tokio_exit_rx();
+
+        let request_search_option = self.build_request_cell_search_option()?;
+        let mut cursor = None;
+        let limit = 10;
+
+        loop {
+            if stop.is_cancelled() {
+                info!("Aggregator scan_rgbpp_request received exit signal, exiting now");
+                return Ok(());
+            }
+
+            let request_cells = self
+                .rgbpp_rpc_client
+                .get_cells(
+                    request_search_option.clone().into(),
+                    Order::Asc,
+                    limit.into(),
+                    cursor,
+                )
+                .map_err(|e| Error::LiveCellNotFound(e.to_string()))?;
+
+            if request_cells.objects.is_empty() {
+                info!("No more request cells found");
+                break;
+            }
+            cursor = Some(request_cells.last_cursor);
+
+            info!("Found {} request cells", request_cells.objects.len());
+            let tip = self
+                .rgbpp_rpc_client
+                .get_tip_block_number()
+                .map_err(|e| Error::RpcError(format!("get tip block number error: {}", e)))?
+                .value();
+            let cells_with_messge = self.check_request(request_cells.objects.clone(), tip);
+            info!("Found {} valid request cells", cells_with_messge.len());
+            if cells_with_messge.is_empty() {
+                break;
+            }
+
+            let custodian_tx = self.create_custodian_tx(cells_with_messge)?;
+            match wait_for_tx_confirmation(
+                self.rgbpp_rpc_client.clone(),
+                custodian_tx,
+                Duration::from_secs(15),
+            ) {
+                Ok(()) => info!("Transaction confirmed"),
+                Err(e) => info!("{}", e.to_string()),
+            }
+        }
+
+        Ok(())
+    }
+
+    pub fn create_custodian_tx(&self, request_cells: Vec<(Cell, Transfer)>) -> Result<H256, Error> {
         // get queue cell
         let (queue_cell, queue_cell_data) = self.get_rgbpp_queue_cell()?;
 
@@ -73,8 +138,13 @@ impl Aggregator {
         let queue_witness = Requests::new_builder().set(requests).build();
 
         // build custodian lock
-        let (custodian_lock, _) =
-            get_sighash_script_from_privkey(self.config.rgbpp_custodian_lock_key_path.clone())?;
+        let (custodian_lock_args, _) =
+            get_sighash_lock_args_from_privkey(self.rgbpp_custodian_lock_key_path.clone())?;
+        let custodian_lock = Script::new_builder()
+            .code_hash(SIGHASH_TYPE_HASH.pack())
+            .hash_type(ScriptHashType::Type.into())
+            .args(custodian_lock_args.pack())
+            .build();
 
         // build inputs
         let inputs: Vec<CellInput> = std::iter::once(queue_cell.out_point.clone())
@@ -157,7 +227,7 @@ impl Aggregator {
         }
 
         // balance transaction
-        let network_info = NetworkInfo::new(NetworkType::Testnet, self.config.rgbpp_uri.clone());
+        let network_info = NetworkInfo::new(NetworkType::Testnet, self.rgbpp_uri.clone());
         let fee_rate = self.fee_rate()?;
         let configuration = {
             let mut config =
@@ -166,8 +236,14 @@ impl Aggregator {
             config.fee_rate = fee_rate;
             config
         };
-        let (capacity_provider_script, capacity_provider_key) =
-            get_sighash_script_from_privkey(self.config.rgbpp_ckb_provider_key_path.clone())?;
+        let (capacity_provider_script_args, capacity_provider_key) =
+            get_sighash_lock_args_from_privkey(self.rgbpp_ckb_provider_key_path.clone())?;
+        let capacity_provider_script = Script::new_builder()
+            .code_hash(SIGHASH_TYPE_HASH.pack())
+            .hash_type(ScriptHashType::Type.into())
+            .args(capacity_provider_script_args.pack())
+            .build();
+
         let mut change_builder =
             DefaultChangeBuilder::new(&configuration, capacity_provider_script.clone(), Vec::new());
         change_builder.init(&mut tx_builder);
@@ -242,7 +318,7 @@ impl Aggregator {
 
         // sign
         let (_, message_queue_key) =
-            get_sighash_script_from_privkey(self.config.rgbpp_queue_lock_key_path.clone())?;
+            get_sighash_lock_args_from_privkey(self.rgbpp_queue_lock_key_path.clone())?;
         TransactionSigner::new(&network_info)
             .sign_transaction(
                 &mut tx_with_groups,
@@ -263,5 +339,106 @@ impl Aggregator {
         info!("custodian tx send: {:?}", tx_hash.pack());
 
         Ok(tx_hash)
+    }
+
+    fn build_request_cell_search_option(&self) -> Result<CellQueryOptions, Error> {
+        let request_script = self.get_rgbpp_script(REQUEST_LOCK)?;
+        Ok(CellQueryOptions::new_lock(request_script))
+    }
+
+    fn check_request(&self, cells: Vec<Cell>, tip: u64) -> Vec<(Cell, Transfer)> {
+        cells
+            .into_iter()
+            .filter_map(|cell| {
+                let live_cell: LiveCell = cell.clone().into();
+                RequestLockArgs::from_slice(&live_cell.output.lock().args().raw_data())
+                    .ok()
+                    .and_then(|args| {
+                        let target_request_type_hash = args.request_type_hash();
+                        info!("target_request_type_hash: {:?}", target_request_type_hash);
+
+                        let timeout: u64 = args.timeout().unpack();
+                        let since = Since::from_raw_value(timeout);
+                        let since_check =
+                            since.extract_metric().map_or(false, |(since_type, value)| {
+                                match since_type {
+                                    SinceType::BlockNumber => {
+                                        let threshold = if since.is_absolute() {
+                                            value
+                                        } else {
+                                            cell.block_number.value() + value
+                                        };
+                                        tip + CONFIRMATION_THRESHOLD < threshold
+                                    }
+                                    _ => false,
+                                }
+                            });
+
+                        let content = args.content();
+                        let target_chain_id: Bytes = content.target_chain_id().raw_data();
+                        info!("target_chain_id: {:?}", target_chain_id);
+                        let request_type = content.request_type();
+
+                        let (check_message, transfer) = {
+                            let message = content.message();
+                            let message_union = message.to_enum();
+                            match message_union {
+                                MessageUnion::Transfer(transfer) => {
+                                    let transfer_amount: u128 = transfer.amount().unpack();
+                                    let check_message = cell
+                                        .clone()
+                                        .output_data
+                                        .and_then(|data| decode_udt_amount(data.as_bytes()))
+                                        .map_or(false, |amount| {
+                                            info!(
+                                                "original amount: {:?}, transfer amount: {:?}",
+                                                amount, transfer_amount
+                                            );
+                                            transfer_amount <= amount
+                                        });
+                                    (check_message, transfer)
+                                }
+                            }
+                        };
+
+                        let request_type_hash = self
+                            .rgbpp_scripts
+                            .get(QUEUE_TYPE)
+                            .map(|script_info| script_info.script.calc_script_hash());
+
+                        if Some(target_request_type_hash) == request_type_hash
+                            && self.chain_id.clone() == target_chain_id
+                            && request_type == Byte::new(RequestType::CkbToBranch as u8)
+                            && check_message
+                            && since_check
+                        {
+                            Some((cell, transfer))
+                        } else {
+                            None
+                        }
+                    })
+            })
+            .collect()
+    }
+}
+
+fn wait_for_tx_confirmation(
+    _client: RpcClient,
+    _tx_hash: H256,
+    timeout: Duration,
+) -> Result<(), Error> {
+    let start = std::time::Instant::now();
+
+    loop {
+        if true {
+            sleep(Duration::from_secs(8));
+            return Ok(());
+        }
+
+        if start.elapsed() > timeout {
+            return Err(Error::TimedOut(
+                "Transaction confirmation timed out".to_string(),
+            ));
+        }
     }
 }

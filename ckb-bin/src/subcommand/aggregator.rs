@@ -1,4 +1,4 @@
-use branch_chain_aggregator::Aggregator;
+use aggregator_main::Aggregator;
 use ckb_app_config::{AggregatorArgs, ExitCode};
 use ckb_logger::info;
 use ckb_stop_handler::{

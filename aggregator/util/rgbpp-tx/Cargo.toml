@@ -1,0 +1,23 @@
+[package]
+name = "aggregator-rgbpp-tx"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+aggregator-common = { path = "../common", version = "0.1.0" }
+ckb-app-config = { path = "../../../util/app-config", version = "= 0.116.1" }
+ckb-hash = { path = "../../../util/hash", version = "= 0.116.1" }
+ckb-stop-handler = { path = "../../../util/stop-handler", version = "= 0.116.1" }
+
+ckb-sdk = "=3.2.0"
+ckb-gen-types = { version = "=0.116.1", default-features = false }
+ckb-logger = "=0.116.1"
+ckb-jsonrpc-types = "=0.116.1"
+ckb-types = "=0.116.1"
+
+molecule = { version = "0.7.5", default-features = false }
+secp256k1 = { version = "0.24", features = ["recovery"] }
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"

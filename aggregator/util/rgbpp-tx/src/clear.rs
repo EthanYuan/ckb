@@ -36,6 +36,13 @@ impl RgbppTxBuilder {
     pub fn create_clear_queue_tx(&self) -> Result<H256, Error> {
         // get queue cell
         let (queue_cell, queue_cell_data) = self.get_rgbpp_queue_cell()?;
+        info!(
+            "The queue contains {} items that need to be cleared.",
+            queue_cell_data.outbox().len()
+        );
+        if queue_cell_data.outbox().is_empty() {
+            return Ok(H256::default());
+        }
 
         // build new queue
         let request_ids = vec![];

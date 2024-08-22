@@ -4,7 +4,7 @@ mod clear;
 mod custodian;
 mod schemas;
 
-use crate::schemas::leap::{CrossChainQueue, Request, Requests};
+pub use crate::schemas::leap::{self, CrossChainQueue, Request, Requests};
 
 use aggregator_common::{
     error::Error,
@@ -30,7 +30,7 @@ use std::collections::{HashMap, HashSet};
 use std::path::PathBuf;
 
 #[derive(Clone, Debug, PartialEq, Eq)]
-struct ScriptInfo {
+pub struct ScriptInfo {
     pub script: Script,
     pub cell_dep: CellDep,
 }

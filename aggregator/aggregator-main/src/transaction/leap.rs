@@ -63,6 +63,7 @@ impl Aggregator {
         }
 
         // build inputs
+        info!("Search Token Manager Cell ...");
         let token_manager_cell = self.get_token_manager_cell()?;
         let inputs: Vec<CellInput> = std::iter::once(token_manager_cell.out_point.clone())
             .map(|out_point| {
@@ -317,8 +318,6 @@ impl Aggregator {
     }
 
     fn get_token_manager_cell(&self) -> Result<Cell, Error> {
-        info!("Search Token Manager Cell ...");
-
         let token_manager_cell_search_option = self.build_token_manager_cell_search_option()?;
         let token_manager_cell = self
             .branch_rpc_client

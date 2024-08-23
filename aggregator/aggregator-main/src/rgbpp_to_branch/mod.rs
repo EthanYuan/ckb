@@ -15,7 +15,7 @@ use ckb_types::{
     H256,
 };
 
-use std::thread::{self};
+use std::thread;
 use std::time::Duration;
 
 pub const SIGHASH_TYPE_HASH: H256 =
@@ -25,6 +25,8 @@ const CKB_FEE_RATE_LIMIT: u64 = 5000;
 impl Aggregator {
     /// Collect RGB++ requests and send them to the branch chain
     pub fn poll_rgbpp_requests(&self, stop_rx: Receiver<()>) {
+        info!("RGB++ Aggregator service started ...");
+
         let poll_interval = self.poll_interval;
         let poll_service: Aggregator = self.clone();
 

@@ -13,17 +13,31 @@ pub fn aggregator(args: AggregatorArgs, chain_id: String) -> Result<(), ExitCode
 
     let aggregator = Aggregator::new(args.config, Duration::from_secs(2), chain_id);
 
-    let stop_rx = new_crossbeam_exit_rx();
-    const THREAD_NAME: &str = "Aggregator";
-    let aggregator_jh = thread::Builder::new()
-        .name(THREAD_NAME.into())
+    let stop_rx_rgbpp = new_crossbeam_exit_rx();
+    let stop_rx_branch = new_crossbeam_exit_rx();
+
+    const THREAD_NAME_RGBPP: &str = "Aggregator_RGBPP";
+    let aggregator_rgbpp = aggregator.clone();
+    let aggregator_rgbpp_jh = thread::Builder::new()
+        .name(THREAD_NAME_RGBPP.into())
         .spawn(move || {
-            aggregator.poll_rgbpp_requests(stop_rx);
+            aggregator_rgbpp.poll_rgbpp_requests(stop_rx_rgbpp);
         })
         .expect("Start aggregator failed!");
-    register_thread(THREAD_NAME, aggregator_jh);
+    register_thread(THREAD_NAME_RGBPP, aggregator_rgbpp_jh);
 
-    info!("Branch Aggregator service started ...");
+    const THREAD_NAME_BRANCH: &str = "Aggregator_Branch";
+    let aggregator_branch = aggregator.clone();
+    let aggregator_branch_jh = thread::Builder::new()
+        .name(THREAD_NAME_BRANCH.into())
+        .spawn({
+            move || {
+                aggregator_branch.poll_branch_requests(stop_rx_branch);
+            }
+        })
+        .expect("Start Branch aggregator failed!");
+    register_thread(THREAD_NAME_BRANCH, aggregator_branch_jh);
+
     ctrlc::set_handler(|| {
         info!("Trapped exit signal, exiting...");
         broadcast_exit_signals();

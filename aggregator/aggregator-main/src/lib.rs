@@ -1,7 +1,7 @@
 //! Branch Chain Aggregator
 
+pub(crate) mod rgbpp_to_branch;
 pub(crate) mod schemas;
-pub(crate) mod transaction;
 
 use crate::schemas::leap::Request;
 
@@ -77,7 +77,7 @@ impl Aggregator {
     }
 
     /// Run the Aggregator
-    pub fn run(&self, stop_rx: Receiver<()>) {
+    pub fn collect_rgbpp_requests(&self, stop_rx: Receiver<()>) {
         let poll_interval = self.poll_interval;
         let poll_service: Aggregator = self.clone();
 

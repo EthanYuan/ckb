@@ -18,7 +18,7 @@ pub fn aggregator(args: AggregatorArgs, chain_id: String) -> Result<(), ExitCode
     let aggregator_jh = thread::Builder::new()
         .name(THREAD_NAME.into())
         .spawn(move || {
-            aggregator.collect_rgbpp_requests(stop_rx);
+            aggregator.poll_rgbpp_requests(stop_rx);
         })
         .expect("Start aggregator failed!");
     register_thread(THREAD_NAME, aggregator_jh);

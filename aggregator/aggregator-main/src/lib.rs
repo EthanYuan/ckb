@@ -4,26 +4,21 @@ pub(crate) mod branch_to_rgbpp;
 pub(crate) mod rgbpp_to_branch;
 pub(crate) mod schemas;
 
-use crate::schemas::leap::Request;
-
 use aggregator_common::{error::Error, utils::encode_udt_amount};
 use aggregator_rgbpp_tx::RgbppTxBuilder;
 use ckb_app_config::{AggregatorConfig, AssetConfig, LockConfig, ScriptConfig};
-use ckb_channel::Receiver;
-use ckb_logger::{error, info};
 use ckb_sdk::rpc::CkbRpcClient as RpcClient;
 use ckb_types::{
-    packed::{CellDep, OutPoint, Script},
-    prelude::*,
+    packed::{CellDep, Script},
     H256,
 };
 
 use std::collections::HashMap;
 use std::str::FromStr;
-use std::thread::{self, sleep};
+use std::thread::sleep;
 use std::time::Duration;
 
-///
+/// Aggregator
 #[derive(Clone)]
 pub struct Aggregator {
     config: AggregatorConfig,
@@ -75,87 +70,6 @@ impl Aggregator {
             asset_types: get_asset_types(config.asset_types),
             asset_locks: get_asset_locks(config.asset_locks),
             rgbpp_tx_builder,
-        }
-    }
-
-    /// Run the Aggregator
-    pub fn collect_rgbpp_requests(&self, stop_rx: Receiver<()>) {
-        let poll_interval = self.poll_interval;
-        let poll_service: Aggregator = self.clone();
-
-        loop {
-            match stop_rx.try_recv() {
-                Ok(_) => {
-                    info!("Aggregator received exit signal, stopped");
-                    break;
-                }
-                Err(crossbeam_channel::TryRecvError::Empty) => {
-                    // No exit signal, continue execution
-                }
-                Err(_) => {
-                    info!("Error receiving exit signal");
-                    break;
-                }
-            }
-
-            // get queue data
-            let rgbpp_requests = poll_service.rgbpp_tx_builder.get_rgbpp_queue_requests();
-            let (rgbpp_requests, queue_cell) = match rgbpp_requests {
-                Ok((rgbpp_requests, queue_cell)) => {
-                    let rgbpp_requests: Vec<_> = rgbpp_requests
-                        .into_iter()
-                        .map(|r| Request::new_unchecked(r.as_bytes()))
-                        .collect();
-                    let queue_cell = OutPoint::new_unchecked(queue_cell.as_bytes());
-                    (rgbpp_requests, queue_cell)
-                }
-                Err(e) => {
-                    error!("get RGB++ queue data error: {}", e.to_string());
-                    continue;
-                }
-            };
-
-            let leap_tx = poll_service.create_leap_tx(rgbpp_requests.clone(), queue_cell);
-            let leap_tx = match leap_tx {
-                Ok(leap_tx) => leap_tx,
-                Err(e) => {
-                    error!("create leap transaction error: {}", e.to_string());
-                    continue;
-                }
-            };
-            match wait_for_tx_confirmation(
-                poll_service.branch_rpc_client.clone(),
-                leap_tx,
-                Duration::from_secs(600),
-            ) {
-                Ok(()) => {}
-                Err(e) => error!("{}", e.to_string()),
-            }
-
-            if !rgbpp_requests.is_empty() {
-                let update_queue_tx = poll_service.rgbpp_tx_builder.create_clear_queue_tx();
-                let update_queue_tx = match update_queue_tx {
-                    Ok(update_queue_tx) => update_queue_tx,
-                    Err(e) => {
-                        error!("{}", e.to_string());
-                        continue;
-                    }
-                };
-                match wait_for_tx_confirmation(
-                    poll_service.rgbpp_rpc_client.clone(),
-                    H256(update_queue_tx.0),
-                    Duration::from_secs(600),
-                ) {
-                    Ok(()) => {}
-                    Err(e) => error!("{}", e.to_string()),
-                }
-            }
-
-            if let Err(e) = poll_service.rgbpp_tx_builder.collect_rgbpp_request() {
-                info!("Aggregator: {:?}", e);
-            }
-
-            thread::sleep(poll_interval);
         }
     }
 }
@@ -244,7 +158,7 @@ fn wait_for_tx_confirmation(
 mod tests {
     use super::*;
 
-    use ckb_types::{bytes::Bytes, core::ScriptHashType};
+    use ckb_types::{bytes::Bytes, core::ScriptHashType, prelude::*};
 
     use std::str::FromStr;
 

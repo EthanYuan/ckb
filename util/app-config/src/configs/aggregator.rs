@@ -30,6 +30,9 @@ pub struct AggregatorConfig {
     /// Branch Chain token manager lock key path
     #[serde(default)]
     pub branch_chain_token_manager_lock_key_path: PathBuf,
+    /// Branch Chain token manager with outbox key path
+    #[serde(default)]
+    pub branch_chain_token_manager_outbox_lock_key_path: PathBuf,
     /// RGB++ scripts
     #[serde(default)]
     pub rgbpp_scripts: Vec<ScriptConfig>,
@@ -38,10 +41,10 @@ pub struct AggregatorConfig {
     pub branch_scripts: Vec<ScriptConfig>,
     /// Asset configs
     #[serde(default)]
-    pub rgbpp_assets: Vec<AssetConfig>,
+    pub asset_types: Vec<AssetConfig>,
     /// Lock configs
     #[serde(default)]
-    pub rgbpp_asset_locks: Vec<LockConfig>,
+    pub asset_locks: Vec<LockConfig>,
 }
 
 /// Script config options.
@@ -88,10 +91,11 @@ impl Default for AggregatorConfig {
             branch_uri: "http://localhost:8114".to_string(),
             branch_chain_capacity_provider_key_path: PathBuf::new(),
             branch_chain_token_manager_lock_key_path: PathBuf::new(),
+            branch_chain_token_manager_outbox_lock_key_path: PathBuf::new(),
             rgbpp_scripts: Vec::new(),
             branch_scripts: Vec::new(),
-            rgbpp_assets: Vec::new(),
-            rgbpp_asset_locks: Vec::new(),
+            asset_types: Vec::new(),
+            asset_locks: Vec::new(),
         }
     }
 }

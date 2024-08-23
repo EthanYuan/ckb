@@ -94,14 +94,14 @@ impl Aggregator {
                     }
                 }
             };
-            let is_capacity = if let Some(asset) = self.rgbpp_assets.get(&asset_id) {
+            let is_capacity = if let Some(asset) = self.asset_types.get(&asset_id) {
                 asset.is_capacity
             } else {
                 false
             };
             if is_capacity {
                 let lock = self
-                    .rgbpp_locks
+                    .asset_locks
                     .get(&owner_lock_hash)
                     .ok_or(Error::LockNotFound(owner_lock_hash.to_string()))?;
                 let output = CellOutput::new_builder()
@@ -112,7 +112,7 @@ impl Aggregator {
                 outputs_data.push(PackedBytes::default());
             } else {
                 let lock = self
-                    .rgbpp_locks
+                    .asset_locks
                     .get(&owner_lock_hash)
                     .ok_or(Error::LockNotFound(owner_lock_hash.to_string()))?;
                 let xudt = &self

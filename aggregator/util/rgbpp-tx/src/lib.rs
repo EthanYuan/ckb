@@ -10,7 +10,7 @@ use aggregator_common::{
     error::Error,
     utils::{privkey::get_sighash_lock_args_from_privkey, QUEUE_TYPE},
 };
-use ckb_app_config::ScriptConfig;
+use ckb_app_config::{AssetConfig, LockConfig, ScriptConfig};
 use ckb_logger::{info, warn};
 use ckb_sdk::{
     rpc::ckb_indexer::{Cell, Order},
@@ -28,6 +28,7 @@ use ckb_types::{
 
 use std::collections::{HashMap, HashSet};
 use std::path::PathBuf;
+use std::str::FromStr;
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct ScriptInfo {
@@ -43,6 +44,13 @@ const CONFIRMATION_THRESHOLD: u64 = 24;
 /// CKB fee rate limit
 const CKB_FEE_RATE_LIMIT: u64 = 5000;
 
+#[derive(Clone, Debug, PartialEq, Eq)]
+struct AssetInfo {
+    pub script: Script,
+    pub is_capacity: bool,
+    pub script_name: String,
+}
+
 #[derive(Clone)]
 pub struct RgbppTxBuilder {
     chain_id: String,
@@ -52,6 +60,8 @@ pub struct RgbppTxBuilder {
     rgbpp_custodian_lock_key_path: PathBuf,
     rgbpp_queue_lock_key_path: PathBuf,
     rgbpp_ckb_provider_key_path: PathBuf,
+    asset_types: HashMap<H256, AssetInfo>,
+    asset_locks: HashMap<H256, Script>,
 }
 
 impl RgbppTxBuilder {
@@ -62,6 +72,8 @@ impl RgbppTxBuilder {
         rgbpp_custodian_lock_key_path: PathBuf,
         rgbpp_queue_lock_key_path: PathBuf,
         rgbpp_ckb_provider_key_path: PathBuf,
+        asset_types: Vec<AssetConfig>,
+        asset_locks: Vec<LockConfig>,
     ) -> Self {
         let rgbpp_rpc_client = RpcClient::new(&rgbpp_uri);
         Self {
@@ -72,6 +84,8 @@ impl RgbppTxBuilder {
             rgbpp_custodian_lock_key_path,
             rgbpp_queue_lock_key_path,
             rgbpp_ckb_provider_key_path,
+            asset_types: get_asset_types(asset_types),
+            asset_locks: get_asset_locks(asset_locks),
         }
     }
 
@@ -249,6 +263,46 @@ fn get_script_map(scripts: Vec<ScriptConfig>) -> HashMap<String, ScriptInfo> {
                         .into(),
                 },
             )
+        })
+        .collect()
+}
+
+fn get_asset_types(asset_configs: Vec<AssetConfig>) -> HashMap<H256, AssetInfo> {
+    let mut is_capacity_found = false;
+
+    asset_configs
+        .into_iter()
+        .map(|asset_config| {
+            let script = serde_json::from_str::<ckb_jsonrpc_types::Script>(&asset_config.script)
+                .expect("config string to script")
+                .into();
+            let script_name = asset_config.asset_name.clone();
+            let is_capacity = asset_config.is_capacity && !is_capacity_found;
+            if is_capacity {
+                is_capacity_found = true;
+            }
+            let asset_id = asset_config.asset_id.clone();
+            (
+                H256::from_str(&asset_id).expect("asset id to h256"),
+                AssetInfo {
+                    script,
+                    is_capacity,
+                    script_name,
+                },
+            )
+        })
+        .collect()
+}
+
+fn get_asset_locks(lock_configs: Vec<LockConfig>) -> HashMap<H256, Script> {
+    lock_configs
+        .iter()
+        .map(|lock_config| {
+            let lock_hash = H256::from_str(&lock_config.lock_hash).expect("lock hash to h256");
+            let script = serde_json::from_str::<ckb_jsonrpc_types::Script>(&lock_config.script)
+                .expect("config string to script")
+                .into();
+            (lock_hash, script)
         })
         .collect()
 }

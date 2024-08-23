@@ -30,8 +30,8 @@ pub struct Aggregator {
     rgbpp_rpc_client: RpcClient,
     branch_rpc_client: RpcClient,
     branch_scripts: HashMap<String, ScriptInfo>,
-    rgbpp_assets: HashMap<H256, AssetInfo>,
-    rgbpp_locks: HashMap<H256, Script>,
+    asset_types: HashMap<H256, AssetInfo>,
+    asset_locks: HashMap<H256, Script>,
 
     rgbpp_tx_builder: RgbppTxBuilder,
 }
@@ -61,6 +61,8 @@ impl Aggregator {
             config.rgbpp_custodian_lock_key_path.clone(),
             config.rgbpp_queue_lock_key_path.clone(),
             config.rgbpp_ckb_provider_key_path.clone(),
+            config.asset_types.clone(),
+            config.asset_locks.clone(),
         );
         Aggregator {
             config: config.clone(),
@@ -68,8 +70,8 @@ impl Aggregator {
             rgbpp_rpc_client,
             branch_rpc_client,
             branch_scripts: get_script_map(config.branch_scripts),
-            rgbpp_assets: get_asset_map(config.rgbpp_assets),
-            rgbpp_locks: get_rgbpp_locks(config.rgbpp_asset_locks),
+            asset_types: get_asset_types(config.asset_types),
+            asset_locks: get_asset_locks(config.asset_locks),
             rgbpp_tx_builder,
         }
     }
@@ -175,7 +177,7 @@ fn get_script_map(scripts: Vec<ScriptConfig>) -> HashMap<String, ScriptInfo> {
         .collect()
 }
 
-fn get_asset_map(asset_configs: Vec<AssetConfig>) -> HashMap<H256, AssetInfo> {
+fn get_asset_types(asset_configs: Vec<AssetConfig>) -> HashMap<H256, AssetInfo> {
     let mut is_capacity_found = false;
 
     asset_configs
@@ -202,7 +204,7 @@ fn get_asset_map(asset_configs: Vec<AssetConfig>) -> HashMap<H256, AssetInfo> {
         .collect()
 }
 
-fn get_rgbpp_locks(lock_configs: Vec<LockConfig>) -> HashMap<H256, Script> {
+fn get_asset_locks(lock_configs: Vec<LockConfig>) -> HashMap<H256, Script> {
     lock_configs
         .iter()
         .map(|lock_config| {

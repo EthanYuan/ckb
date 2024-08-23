@@ -385,7 +385,7 @@ impl RgbppTxBuilder {
                             match message_union {
                                 MessageUnion::Transfer(transfer) => {
                                     let transfer_amount: u128 = transfer.amount().unpack();
-                                    let check_message = cell
+                                    let check_amount = cell
                                         .clone()
                                         .output_data
                                         .and_then(|data| decode_udt_amount(data.as_bytes()))
@@ -396,7 +396,11 @@ impl RgbppTxBuilder {
                                             );
                                             transfer_amount <= amount
                                         });
-                                    (check_message, transfer)
+                                    let lock_hash: H256 = transfer.owner_lock_hash().unpack();
+                                    let type_hash: H256 = transfer.asset_type().unpack();
+                                    let check_lock = self.asset_locks.contains_key(&lock_hash);
+                                    let check_type = self.asset_types.contains_key(&type_hash);
+                                    (check_amount && check_lock && check_type, transfer)
                                 }
                             }
                         };

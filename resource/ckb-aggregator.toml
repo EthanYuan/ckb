@@ -185,8 +185,8 @@ cell_dep = '''
 }
 '''
 
-[[aggregator.rgbpp_assets]]
-asset_name = "f091"
+[[aggregator.asset_types]]
+asset_name = "RGTT"
 # Only the first is_capacity = true is valid; others should be treated as false
 is_capacity = true
 asset_id = "29b0b1a449b0e7fb08881e1d810a6abbedb119e9c4ffc76eebbc757fb214f091"
@@ -198,7 +198,19 @@ script = '''
 }
 '''
 
-[[aggregator.rgbpp_asset_locks]]
+[[aggregator.asset_types]]
+asset_name = "tUTXO"
+is_capacity = false
+asset_id = "37b6748d268d4aa62445d546bac1f90ccbc02cbbcecc7831aca3b77d70304e0f"
+script = '''
+{
+    "args": "0x92b419a8d8e03c683a47b960f707f2b866f6114b70327b6628762719b243c5ca",
+    "code_hash": "0x25c29dc317811a6f6f3985a7a9ebc4838bd388d19d0feeecf0bcd60f6c0975bb",
+    "hash_type": "type"
+}
+'''
+
+[[aggregator.asset_locks]]
 lock_hash = "562e4e8a2f64a3e9c24beb4b7dd002d0ad3b842d0cc77924328e36ad114e3ebe"
 script = '''
 {
@@ -208,7 +220,7 @@ script = '''
 }
 '''
 
-[[aggregator.rgbpp_asset_locks]]
+[[aggregator.asset_locks]]
 lock_hash = "3494ad80b80de5ce7bcbbbdac53d888666c576ea8a49b83ca108fc18641eb278"
 script = '''
 {
@@ -218,7 +230,7 @@ script = '''
 }
 '''
 
-[[aggregator.rgbpp_asset_locks]]
+[[aggregator.asset_locks]]
 lock_hash = "0a97a585361f3deabb69f28b2bc08d05f3a224cd1ce805996526c8f041a733fb"
 script = '''
 {

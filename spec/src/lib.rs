@@ -16,6 +16,7 @@ use crate::consensus::{
     TYPE_ID_CODE_HASH,
 };
 use crate::versionbits::{ActiveMode, Deployment, DeploymentPos};
+use aggregator_common::schemas::leap;
 use ckb_constant::hardfork::{mainnet, testnet};
 use ckb_crypto::secp::Privkey;
 use ckb_hash::{blake2b_256, new_blake2b};
@@ -66,7 +67,7 @@ pub const OUTPUT_INDEX_SECP256K1_DATA: u64 = 3;
 /// The output index of SECP256K1/multisig script in the genesis no.0 transaction
 pub const OUTPUT_INDEX_SECP256K1_BLAKE160_MULTISIG_ALL: u64 = 4;
 /// The output index of Token Manager script in the genesis no.0 transaction
-pub const OUTPUT_INDEX_TOKEN_MANAGER: u64 = 9;
+pub const OUTPUT_INDEX_TOKEN_MANAGER: u64 = 10;
 
 /// The CKB block chain specification
 #[derive(Clone, PartialEq, Eq, Debug, Serialize, Deserialize)]
@@ -403,6 +404,9 @@ pub struct GenesisCell {
 pub struct IssuedCell {
     /// The cell capacity
     pub capacity: Capacity,
+    /// The cell data
+    #[serde(default)]
+    pub with_queue: bool,
     /// The cell lock
     pub lock: Script,
 }
@@ -811,7 +815,14 @@ impl ChainSpec {
                 .iter()
                 .map(IssuedCell::build_output),
         );
-        outputs_data.extend(self.genesis.issued_cells.iter().map(|_| Bytes::new()));
+        outputs_data.extend(self.genesis.issued_cells.iter().map(|cell| {
+            if cell.with_queue {
+                let queue = leap::CrossChainQueue::new_builder().build();
+                queue.as_bytes()
+            } else {
+                Bytes::new()
+            }
+        }));
 
         let script: packed::Script = self.genesis.bootstrap_lock.clone().into();
 

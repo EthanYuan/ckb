@@ -79,6 +79,7 @@ pub fn setup_chain(txs_size: usize) -> (Shared, ChainController) {
     spec.genesis.issued_cells = (0..txs_size)
         .map(|_| IssuedCell {
             capacity: capacity_bytes!(100_000),
+            with_queue: false,
             lock: secp_script.clone().into(),
         })
         .collect();

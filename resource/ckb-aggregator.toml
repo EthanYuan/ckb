@@ -50,6 +50,7 @@ rgbpp_custodian_lock_key_path = "../dev/rgbpp_custodian_lock_key"
 branch_uri = "http://localhost:8114"
 branch_chain_capacity_provider_key_path = "../dev/branch_chain_capacity_provider_key"
 branch_chain_token_manager_lock_key_path = "../dev/branch_chain_token_manager_key"
+branch_chain_token_manager_outbox_lock_key_path = "../dev/branch_chain_token_manager_outbox_key"
 
 [[aggregator.gbpp_scripts]]
 script_name = "secp256k1_blake160"
@@ -141,7 +142,7 @@ cell_dep = '''
     "dep_type": "dep_group",
     "out_point": {
         "index": "0x0",
-        "tx_hash": "0x8cca9bc6626cd5bd9890e5468cee855b87943b1fa4c0db92c39ba4f0dd61b90c"
+        "tx_hash": "0xdd4fea4dc94ae5b3bd5a8a169f7edf6ea731689eec39b94f395a1a8ea1321205"
     }
 }
 '''
@@ -160,7 +161,26 @@ cell_dep = '''
     "dep_type": "code",
     "out_point": {
         "index": "0x5",
-        "tx_hash": "0xad501cf59dc57021e4e4879a5f54aff4fe91771685e9fcfa3896ecdbf0664ed4"
+        "tx_hash": "0x7f1180615b86b8216cfb4a9b5421828c41f766f8d3111239e63d253d2ad81381"
+    }
+}
+'''
+
+[[aggregator.branch_scripts]]
+script_name = "request_lock"
+script = '''
+{
+    "args": "0x",
+    "code_hash": "0x1a1e4fef34f5982906f745b048fe7b1089647e82346074e0f32c2ece26cf6b1e",
+    "hash_type": "type"
+}
+'''
+cell_dep = '''
+{
+    "dep_type": "code",
+    "out_point": {
+        "index": "0x6",
+        "tx_hash": "0x7f1180615b86b8216cfb4a9b5421828c41f766f8d3111239e63d253d2ad81381"
     }
 }
 '''
@@ -193,6 +213,16 @@ lock_hash = "3494ad80b80de5ce7bcbbbdac53d888666c576ea8a49b83ca108fc18641eb278"
 script = '''
 {
     "args": "0x0dc39ff2d4da099fbd2613fdab8fe55f65e23143",
+    "code_hash": "0x9bd7e06f3ecf4be0f2fcd2188b23f1b9fcc88e5d4b65a8637b17723bbda3cce8",
+    "hash_type": "type"
+}
+'''
+
+[[aggregator.rgbpp_asset_locks]]
+lock_hash = "0a97a585361f3deabb69f28b2bc08d05f3a224cd1ce805996526c8f041a733fb"
+script = '''
+{
+    "args": "0xa0c73e84d827b87073a2a0e6448921870d114d02",
     "code_hash": "0x9bd7e06f3ecf4be0f2fcd2188b23f1b9fcc88e5d4b65a8637b17723bbda3cce8",
     "hash_type": "type"
 }

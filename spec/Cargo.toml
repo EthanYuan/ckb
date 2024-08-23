@@ -24,7 +24,7 @@ ckb-hash = { path = "../util/hash", version = "= 0.116.1"}
 ckb-error = { path = "../error", version = "= 0.116.1" }
 ckb-traits = { path = "../traits", version = "= 0.116.1" }
 ckb-logger = {path = "../util/logger", version = "= 0.116.1"}
-
+aggregator-common = { path = "../aggregator/util/common", version = "= 0.1.0" }
 
 [dev-dependencies]
 tempfile.workspace = true

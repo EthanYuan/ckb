@@ -1,5 +1,6 @@
 //! Branch Chain Aggregator
 
+pub(crate) mod branch_to_rgbpp;
 pub(crate) mod rgbpp_to_branch;
 pub(crate) mod schemas;
 
@@ -29,6 +30,7 @@ pub struct Aggregator {
     poll_interval: Duration,
     rgbpp_rpc_client: RpcClient,
     branch_rpc_client: RpcClient,
+
     branch_scripts: HashMap<String, ScriptInfo>,
     asset_types: HashMap<H256, AssetInfo>,
     asset_locks: HashMap<H256, Script>,
@@ -122,7 +124,7 @@ impl Aggregator {
                 }
             };
             match wait_for_tx_confirmation(
-                poll_service.rgbpp_rpc_client.clone(),
+                poll_service.branch_rpc_client.clone(),
                 leap_tx,
                 Duration::from_secs(600),
             ) {

@@ -19,7 +19,7 @@ impl Aggregator {
     fn fee_rate(&self) -> Result<u64, Error> {
         let value = {
             let dynamic = self
-                .rgbpp_rpc_client
+                .branch_rpc_client
                 .get_fee_rate_statistics(None)
                 .map_err(|e| Error::RpcError(format!("get dynamic fee rate error: {}", e)))?
                 .ok_or_else(|| Error::RpcError("get dynamic fee rate error: None".to_string()))

@@ -1,7 +1,7 @@
 #![allow(missing_docs)]
 
-mod clear;
-mod custodian;
+mod branch_to_rgbpp;
+mod rgbpp_to_branch;
 mod schemas;
 
 pub use crate::schemas::leap::{self, CrossChainQueue, Request, Requests};
@@ -65,6 +65,7 @@ pub struct RgbppTxBuilder {
 }
 
 impl RgbppTxBuilder {
+    #[allow(clippy::too_many_arguments)]
     pub fn new(
         chain_id: String,
         rgbpp_uri: String,

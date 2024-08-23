@@ -156,6 +156,7 @@ fn issue_satoshi_cell() -> IssuedCell {
         .build();
     IssuedCell {
         capacity: SATOSHI_CELL_CAPACITY,
+        with_queue: false,
         lock: lock.into(),
     }
 }

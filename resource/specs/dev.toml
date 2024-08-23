@@ -40,6 +40,10 @@ capacity = 100_000_0000_0000
 file = { bundled = "xudt_rce" }
 create_type_id = true
 capacity = 1_0000_0000
+[[genesis.system_cells]]
+file = { bundled = "request-cell-lock" }
+create_type_id = true
+capacity = 1_0000_0000
 
 [genesis.system_cells_lock]
 code_hash = "0x0000000000000000000000000000000000000000000000000000000000000000"
@@ -85,6 +89,14 @@ lock.hash_type = "type"
 capacity = 100_00000000
 lock.code_hash = "0x9bd7e06f3ecf4be0f2fcd2188b23f1b9fcc88e5d4b65a8637b17723bbda3cce8"
 lock.args = "0x470dcdc5e44064909650113a274b3b36aecb6dc7"
+lock.hash_type = "type"
+
+# issue for random generated private key: f0c764b96a2760739090bb14638f481222292026667d089dcb7e8d34d71fab61
+[[genesis.issued_cells]]
+capacity = 200_00000000
+with_queue = true
+lock.code_hash = "0x9bd7e06f3ecf4be0f2fcd2188b23f1b9fcc88e5d4b65a8637b17723bbda3cce8"
+lock.args = "0x1444d370978d96e4d68bbbd9cca99d93b20b0bc6"
 lock.hash_type = "type"
 
 [params]

@@ -31,8 +31,10 @@ dependencies = [
 name = "aggregator-common"
 version = "0.1.0"
 dependencies = [
+ "ckb-gen-types 0.116.1",
  "ckb-hash 0.116.1",
  "ckb-types 0.116.1",
+ "molecule",
  "secp256k1",
  "thiserror",
 ]
@@ -848,6 +850,7 @@ dependencies = [
 name = "ckb-chain-spec"
 version = "0.116.1"
 dependencies = [
+ "aggregator-common",
  "cacache",
  "ckb-constant 0.116.1",
  "ckb-crypto 0.116.1",

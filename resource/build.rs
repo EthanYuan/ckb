@@ -21,6 +21,7 @@ fn main() {
         "ckb-aggregator.toml",
         "default.db-options",
         "xudt_rce",
+        "request-cell-lock",
     ] {
         bundled
             .add_file(f, Compression::Gzip)

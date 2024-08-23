@@ -46,7 +46,9 @@ impl Aggregator {
             }
 
             // get queue data
-            let rgbpp_requests = poll_service.rgbpp_tx_builder.get_rgbpp_queue_requests();
+            let rgbpp_requests = poll_service
+                .rgbpp_tx_builder
+                .get_rgbpp_queue_outbox_requests();
             let (rgbpp_requests, queue_cell) = match rgbpp_requests {
                 Ok((rgbpp_requests, queue_cell)) => {
                     let rgbpp_requests: Vec<_> = rgbpp_requests

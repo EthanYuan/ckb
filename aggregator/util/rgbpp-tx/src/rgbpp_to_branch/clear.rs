@@ -35,7 +35,7 @@ pub const SIGHASH_TYPE_HASH: H256 =
 impl RgbppTxBuilder {
     pub fn create_clear_queue_tx(&self) -> Result<H256, Error> {
         // get queue cell
-        let (queue_cell, queue_cell_data) = self.get_rgbpp_queue_cell()?;
+        let (queue_cell, queue_cell_data) = self.get_rgbpp_queue_outbox_cell()?;
         info!(
             "The queue contains {} items that need to be cleared.",
             queue_cell_data.outbox().len()

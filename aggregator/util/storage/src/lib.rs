@@ -10,6 +10,7 @@ use rocksdb::{
 use std::path::Path;
 use std::sync::Arc;
 
+#[derive(Clone)]
 pub struct Storage {
     db: Arc<DB>,
 }

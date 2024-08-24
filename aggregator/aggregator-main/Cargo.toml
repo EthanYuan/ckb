@@ -8,6 +8,7 @@ edition = "2021"
 
 [dependencies]
 aggregator-common = { path = "../util/common", version = "0.1.0" }
+aggregator-storage = { path = "../util/storage", version = "0.1.0" }
 aggregator-rgbpp-tx = { path = "../util/rgbpp-tx", version = "0.1.0" }
 ckb-app-config = { path = "../../util/app-config", version = "= 0.116.1" }
 ckb-channel = { path = "../../util/channel", version = "= 0.116.1" }

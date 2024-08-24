@@ -6,7 +6,9 @@ pub(crate) mod schemas;
 
 use aggregator_common::{error::Error, utils::encode_udt_amount};
 use aggregator_rgbpp_tx::RgbppTxBuilder;
+use aggregator_storage::Storage;
 use ckb_app_config::{AggregatorConfig, AssetConfig, LockConfig, ScriptConfig};
+use ckb_logger::info;
 use ckb_sdk::rpc::CkbRpcClient as RpcClient;
 use ckb_types::{
     packed::{CellDep, Script},
@@ -31,6 +33,8 @@ pub struct Aggregator {
     asset_locks: HashMap<H256, Script>,
 
     rgbpp_tx_builder: RgbppTxBuilder,
+
+    store: Storage,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -61,6 +65,8 @@ impl Aggregator {
             config.asset_types.clone(),
             config.asset_locks.clone(),
         );
+        info!("aggregator store:{:?}", config.store);
+        let store = Storage::new(config.store.clone()).expect("storage init");
         Aggregator {
             config: config.clone(),
             poll_interval,
@@ -70,6 +76,7 @@ impl Aggregator {
             asset_types: get_asset_types(config.asset_types),
             asset_locks: get_asset_locks(config.asset_locks),
             rgbpp_tx_builder,
+            store,
         }
     }
 }

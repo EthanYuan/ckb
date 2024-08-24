@@ -30,6 +30,8 @@ pub enum Error {
     LockNotFound(String),
     #[error("Branch script not found: {0}")]
     BranchScriptNotFound(String),
+    #[error("database error: {0}")]
+    DatabaseError(String),
     #[error("other error: {0}")]
     Other(String),
 }

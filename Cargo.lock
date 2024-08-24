@@ -84,6 +84,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "aggregator-storage"
+version = "0.1.0"
+dependencies = [
+ "aggregator-common",
+ "ckb-rocksdb",
+ "ckb-types 0.116.1",
+ "tempfile",
+]
+
+[[package]]
 name = "ahash"
 version = "0.3.8"
 source = "registry+https://github.com/rust-lang/crates.io-index"

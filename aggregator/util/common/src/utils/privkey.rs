@@ -3,14 +3,11 @@
 use crate::error::Error;
 
 use ckb_hash::blake2b_256;
-use ckb_types::{bytes::Bytes, h256, H256};
+use ckb_types::bytes::Bytes;
 
 use std::fs::File;
 use std::io::Read;
 use std::path::PathBuf;
-
-pub const SIGHASH_TYPE_HASH: H256 =
-    h256!("0x9bd7e06f3ecf4be0f2fcd2188b23f1b9fcc88e5d4b65a8637b17723bbda3cce8");
 
 pub fn get_sighash_lock_args_from_privkey(
     key_path: PathBuf,

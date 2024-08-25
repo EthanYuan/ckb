@@ -1,5 +1,5 @@
-use crate::rgbpp_to_branch::SIGHASH_TYPE_HASH;
 use crate::schemas::leap::{MessageUnion, Request};
+use crate::SIGHASH_TYPE_HASH;
 use crate::{encode_udt_amount, Aggregator};
 
 use aggregator_common::{

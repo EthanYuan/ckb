@@ -2,25 +2,20 @@ mod leap;
 
 use crate::schemas::leap::Request;
 use crate::wait_for_tx_confirmation;
-use crate::Aggregator;
+use crate::{Aggregator, CKB_FEE_RATE_LIMIT};
 
 use aggregator_common::error::Error;
 use ckb_channel::Receiver;
 use ckb_logger::{error, info, warn};
 use ckb_types::{
     core::FeeRate,
-    h256,
-    packed::{CellDep, OutPoint, Script},
+    packed::{CellDep, OutPoint},
     prelude::*,
     H256,
 };
 
 use std::thread;
 use std::time::Duration;
-
-pub const SIGHASH_TYPE_HASH: H256 =
-    h256!("0x9bd7e06f3ecf4be0f2fcd2188b23f1b9fcc88e5d4b65a8637b17723bbda3cce8");
-const CKB_FEE_RATE_LIMIT: u64 = 5000;
 
 impl Aggregator {
     /// Collect RGB++ requests and send them to the branch chain
@@ -45,7 +40,7 @@ impl Aggregator {
                 }
             }
 
-            // get queue data
+            // get RGB++ queue outbox data
             let rgbpp_requests = poll_service
                 .rgbpp_tx_builder
                 .get_rgbpp_queue_outbox_requests();
@@ -64,6 +59,7 @@ impl Aggregator {
                 }
             };
 
+            // create leap transaction
             let leap_tx = poll_service.create_leap_tx(rgbpp_requests.clone(), queue_cell);
             let leap_tx = match leap_tx {
                 Ok(leap_tx) => leap_tx,
@@ -81,6 +77,7 @@ impl Aggregator {
                 Err(e) => error!("{}", e.to_string()),
             }
 
+            // clear queue
             if !rgbpp_requests.is_empty() {
                 let update_queue_tx = poll_service.rgbpp_tx_builder.create_clear_queue_tx();
                 let update_queue_tx = match update_queue_tx {
@@ -138,13 +135,6 @@ impl Aggregator {
         self.branch_scripts
             .get(script_name)
             .map(|script_info| script_info.cell_dep.clone())
-            .ok_or_else(|| Error::MissingScriptInfo(script_name.to_string()))
-    }
-
-    fn _get_branch_script(&self, script_name: &str) -> Result<Script, Error> {
-        self.branch_scripts
-            .get(script_name)
-            .map(|script_info| script_info.script.clone())
             .ok_or_else(|| Error::MissingScriptInfo(script_name.to_string()))
     }
 }

@@ -159,6 +159,45 @@ impl Storage {
             Ok(None)
         }
     }
+
+    /// Records a transaction that has been constructed but not yet confirmed
+    pub fn record_staged_tx(&self, tx_hash: H256) -> Result<(), Error> {
+        self.db
+            .put(b"staged_tx", tx_hash.as_bytes())
+            .map_err(|err: rocksdb::Error| DatabaseError(err.to_string()))
+    }
+
+    /// Removes the staged transaction record after it has been confirmed
+    pub fn clear_staged_tx(&self) -> Result<(), Error> {
+        self.db
+            .delete(b"staged_tx")
+            .map_err(|err: rocksdb::Error| DatabaseError(err.to_string()))
+    }
+
+    /// Checks if a given transaction hash has already been stored for a specific height
+    pub fn is_tx_stored(&self, height: u64, tx_hash: H256) -> Result<bool, Error> {
+        let key = height.to_be_bytes();
+
+        // Retrieve the stored value by height
+        if let Some(value) = self
+            .db
+            .get(&key)
+            .map_err(|err: rocksdb::Error| Error::DatabaseError(err.to_string()))?
+        {
+            let stored_tx =
+                H256::from_slice(&value[1..33]) // Extract tx field from the value
+                    .map_err(|_| {
+                        Error::DatabaseError("Failed to parse stored transaction".into())
+                    })?;
+
+            debug_assert!(stored_tx == tx_hash);
+
+            // Compare the stored transaction hash with the provided one
+            Ok(stored_tx == tx_hash)
+        } else {
+            Ok(false)
+        }
+    }
 }
 
 #[cfg(test)]

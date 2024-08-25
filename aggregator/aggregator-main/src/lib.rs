@@ -11,6 +11,7 @@ use ckb_app_config::{AggregatorConfig, AssetConfig, LockConfig, ScriptConfig};
 use ckb_logger::info;
 use ckb_sdk::rpc::CkbRpcClient as RpcClient;
 use ckb_types::{
+    h256,
     packed::{CellDep, Script},
     H256,
 };
@@ -19,6 +20,10 @@ use std::collections::HashMap;
 use std::str::FromStr;
 use std::thread::sleep;
 use std::time::Duration;
+
+pub const SIGHASH_TYPE_HASH: H256 =
+    h256!("0x9bd7e06f3ecf4be0f2fcd2188b23f1b9fcc88e5d4b65a8637b17723bbda3cce8");
+const CKB_FEE_RATE_LIMIT: u64 = 5000;
 
 /// Aggregator
 #[derive(Clone)]
@@ -78,6 +83,13 @@ impl Aggregator {
             rgbpp_tx_builder,
             store,
         }
+    }
+
+    fn get_branch_script(&self, script_name: &str) -> Result<Script, Error> {
+        self.branch_scripts
+            .get(script_name)
+            .map(|script_info| script_info.script.clone())
+            .ok_or_else(|| Error::MissingScriptInfo(script_name.to_string()))
     }
 }
 

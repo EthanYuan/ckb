@@ -25,6 +25,7 @@ use std::time::Duration;
 pub const SIGHASH_TYPE_HASH: H256 =
     h256!("0x9bd7e06f3ecf4be0f2fcd2188b23f1b9fcc88e5d4b65a8637b17723bbda3cce8");
 const CKB_FEE_RATE_LIMIT: u64 = 5000;
+const CONFIRMATION_THRESHOLD: u64 = 24;
 
 /// Aggregator
 #[derive(Clone)]

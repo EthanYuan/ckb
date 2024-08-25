@@ -96,8 +96,8 @@ impl Aggregator {
                 }
             }
 
-            if let Err(e) = poll_service.rgbpp_tx_builder.collect_rgbpp_request() {
-                info!("Aggregator: {:?}", e);
+            if let Err(e) = poll_service.rgbpp_tx_builder.collect_rgbpp_requests() {
+                info!("Aggregator collect RGB++ requests: {:?}", e);
             }
 
             thread::sleep(poll_interval);

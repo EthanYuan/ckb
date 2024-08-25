@@ -43,8 +43,8 @@ use std::thread::sleep;
 use std::time::Duration;
 
 impl RgbppTxBuilder {
-    pub fn collect_rgbpp_request(&self) -> Result<(), Error> {
-        info!("Scan RGB++ Request ...");
+    pub fn collect_rgbpp_requests(&self) -> Result<(), Error> {
+        info!("Scan RGB++ requests ...");
 
         let stop: CancellationToken = new_tokio_exit_rx();
 
@@ -396,11 +396,23 @@ impl RgbppTxBuilder {
                                             );
                                             transfer_amount <= amount
                                         });
+
+                                    let check_asset =
+                                        if let Some(ref type_script) = cell.output.type_ {
+                                            let type_script: Script = type_script.clone().into();
+                                            transfer.asset_type() == type_script.calc_script_hash()
+                                        } else {
+                                            false
+                                        };
+
                                     let lock_hash: H256 = transfer.owner_lock_hash().unpack();
                                     let type_hash: H256 = transfer.asset_type().unpack();
                                     let check_lock = self.asset_locks.contains_key(&lock_hash);
                                     let check_type = self.asset_types.contains_key(&type_hash);
-                                    (check_amount && check_lock && check_type, transfer)
+                                    (
+                                        check_amount && check_asset && check_lock && check_type,
+                                        transfer,
+                                    )
                                 }
                             }
                         };

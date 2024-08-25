@@ -1,7 +1,8 @@
+mod burn_tx;
 mod clear_queue_outbox;
 
 pub use crate::schemas::leap::{CrossChainQueue, Request, Requests};
-use crate::{Aggregator, SIGHASH_TYPE_HASH};
+use crate::{wait_for_tx_confirmation, Aggregator, SIGHASH_TYPE_HASH};
 
 use aggregator_common::{error::Error, utils::privkey::get_sighash_lock_args_from_privkey};
 use ckb_channel::Receiver;
@@ -14,10 +15,12 @@ use ckb_types::{
     core::ScriptHashType,
     packed::{Byte32, OutPoint, Script},
     prelude::*,
+    H256,
 };
 
 use std::collections::HashSet;
 use std::thread;
+use std::time::Duration;
 
 impl Aggregator {
     /// Collect Branch requests and send them to the RGB++ chain
@@ -25,7 +28,6 @@ impl Aggregator {
         info!("Branch Aggregator service started ...");
 
         let poll_interval = self.poll_interval;
-        let poll_service: Aggregator = self.clone();
 
         loop {
             match stop_rx.try_recv() {
@@ -43,7 +45,7 @@ impl Aggregator {
             }
 
             // get Branch queue outbox data
-            let rgbpp_requests = poll_service.get_branch_queue_outbox_requests();
+            let rgbpp_requests = self.get_branch_queue_outbox_requests();
             let (rgbpp_requests, _queue_cell) = match rgbpp_requests {
                 Ok((rgbpp_requests, queue_cell)) => (rgbpp_requests, queue_cell),
                 Err(e) => {
@@ -56,7 +58,26 @@ impl Aggregator {
             if rgbpp_requests.is_empty() {
                 let _ = self.check_storage();
             } else {
-                let _ = self.create_clear_queue_outbox_tx(rgbpp_requests);
+                let clear_queue_tx = self.create_clear_queue_outbox_tx(rgbpp_requests);
+                let clear_queue_tx = match clear_queue_tx {
+                    Ok(clear_queue_tx) => clear_queue_tx,
+                    Err(e) => {
+                        error!("{}", e.to_string());
+                        continue;
+                    }
+                };
+                match wait_for_tx_confirmation(
+                    self.branch_rpc_client.clone(),
+                    H256(clear_queue_tx.0),
+                    Duration::from_secs(600),
+                ) {
+                    Ok(()) => {}
+                    Err(e) => error!("{}", e.to_string()),
+                }
+            }
+
+            if let Err(e) = self.collect_branch_requests() {
+                info!("Aggregator collect Branch requests: {:?}", e);
             }
 
             thread::sleep(poll_interval);
@@ -126,10 +147,6 @@ impl Aggregator {
                 .branch_chain_token_manager_outbox_lock_key_path
                 .clone(),
         )?;
-        info!(
-            "message_queue_outbox_lock_args: {:?}",
-            message_queue_outbox_lock_args.pack().to_string()
-        );
         let message_queue_outbox_lock = Script::new_builder()
             .code_hash(SIGHASH_TYPE_HASH.pack())
             .hash_type(ScriptHashType::Type.into())

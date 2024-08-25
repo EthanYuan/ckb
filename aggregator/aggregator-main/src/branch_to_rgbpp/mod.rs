@@ -56,7 +56,7 @@ impl Aggregator {
             if rgbpp_requests.is_empty() {
                 let _ = self.check_storage();
             } else {
-                let _ = self.create_clear_queue_outbox_tx();
+                let _ = self.create_clear_queue_outbox_tx(rgbpp_requests);
             }
 
             thread::sleep(poll_interval);

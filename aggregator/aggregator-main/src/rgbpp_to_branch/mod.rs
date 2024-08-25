@@ -2,13 +2,12 @@ mod leap;
 
 use crate::schemas::leap::Request;
 use crate::wait_for_tx_confirmation;
-use crate::{Aggregator, CKB_FEE_RATE_LIMIT};
+use crate::Aggregator;
 
 use aggregator_common::error::Error;
 use ckb_channel::Receiver;
-use ckb_logger::{error, info, warn};
+use ckb_logger::{error, info};
 use ckb_types::{
-    core::FeeRate,
     packed::{CellDep, OutPoint},
     prelude::*,
     H256,
@@ -105,33 +104,7 @@ impl Aggregator {
         }
     }
 
-    fn fee_rate(&self) -> Result<u64, Error> {
-        let value = {
-            let dynamic = self
-                .branch_rpc_client
-                .get_fee_rate_statistics(None)
-                .map_err(|e| Error::RpcError(format!("get dynamic fee rate error: {}", e)))?
-                .ok_or_else(|| Error::RpcError("get dynamic fee rate error: None".to_string()))
-                .map(|resp| resp.median)
-                .map(Into::into)
-                .map_err(|e| Error::RpcError(format!("get dynamic fee rate error: {}", e)))?;
-            info!("CKB fee rate: {} (dynamic)", FeeRate(dynamic));
-            if dynamic > CKB_FEE_RATE_LIMIT {
-                warn!(
-                    "dynamic CKB fee rate {} is too large, it seems unreasonable;\
-            so the upper limit {} will be used",
-                    FeeRate(dynamic),
-                    FeeRate(CKB_FEE_RATE_LIMIT)
-                );
-                CKB_FEE_RATE_LIMIT
-            } else {
-                dynamic
-            }
-        };
-        Ok(value)
-    }
-
-    fn get_branch_cell_dep(&self, script_name: &str) -> Result<CellDep, Error> {
+    pub(crate) fn get_branch_cell_dep(&self, script_name: &str) -> Result<CellDep, Error> {
         self.branch_scripts
             .get(script_name)
             .map(|script_info| script_info.cell_dep.clone())

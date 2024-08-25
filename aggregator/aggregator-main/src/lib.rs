@@ -8,9 +8,10 @@ use aggregator_common::{error::Error, utils::encode_udt_amount};
 use aggregator_rgbpp_tx::RgbppTxBuilder;
 use aggregator_storage::Storage;
 use ckb_app_config::{AggregatorConfig, AssetConfig, LockConfig, ScriptConfig};
-use ckb_logger::info;
+use ckb_logger::{info, warn};
 use ckb_sdk::rpc::CkbRpcClient as RpcClient;
 use ckb_types::{
+    core::FeeRate,
     h256,
     packed::{CellDep, Script},
     H256,
@@ -85,11 +86,37 @@ impl Aggregator {
         }
     }
 
-    fn get_branch_script(&self, script_name: &str) -> Result<Script, Error> {
+    fn _get_branch_script(&self, script_name: &str) -> Result<Script, Error> {
         self.branch_scripts
             .get(script_name)
             .map(|script_info| script_info.script.clone())
             .ok_or_else(|| Error::MissingScriptInfo(script_name.to_string()))
+    }
+
+    fn fee_rate(&self) -> Result<u64, Error> {
+        let value = {
+            let dynamic = self
+                .branch_rpc_client
+                .get_fee_rate_statistics(None)
+                .map_err(|e| Error::RpcError(format!("get dynamic fee rate error: {}", e)))?
+                .ok_or_else(|| Error::RpcError("get dynamic fee rate error: None".to_string()))
+                .map(|resp| resp.median)
+                .map(Into::into)
+                .map_err(|e| Error::RpcError(format!("get dynamic fee rate error: {}", e)))?;
+            info!("CKB fee rate: {} (dynamic)", FeeRate(dynamic));
+            if dynamic > CKB_FEE_RATE_LIMIT {
+                warn!(
+                    "dynamic CKB fee rate {} is too large, it seems unreasonable;\
+            so the upper limit {} will be used",
+                    FeeRate(dynamic),
+                    FeeRate(CKB_FEE_RATE_LIMIT)
+                );
+                CKB_FEE_RATE_LIMIT
+            } else {
+                dynamic
+            }
+        };
+        Ok(value)
     }
 }
 

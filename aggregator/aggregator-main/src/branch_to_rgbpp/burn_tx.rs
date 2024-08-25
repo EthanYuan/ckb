@@ -1,15 +1,14 @@
 use crate::schemas::leap::{
     Message, MessageUnion, Request, RequestContent, RequestLockArgs, Requests, Transfer,
 };
-use crate::Aggregator;
-use crate::{CONFIRMATION_THRESHOLD, SIGHASH_TYPE_HASH};
+use crate::{wait_for_tx_confirmation, Aggregator, CONFIRMATION_THRESHOLD, SIGHASH_TYPE_HASH};
 
 use aggregator_common::{
     error::Error,
     types::RequestType,
     utils::{
-        decode_udt_amount, encode_udt_amount, privkey::get_sighash_lock_args_from_privkey,
-        QUEUE_TYPE, REQUEST_LOCK, SECP256K1, TOKEN_MANAGER_TYPE,
+        decode_udt_amount, privkey::get_sighash_lock_args_from_privkey, REQUEST_LOCK, SECP256K1,
+        TOKEN_MANAGER_TYPE, XUDT,
     },
 };
 use ckb_jsonrpc_types::TransactionView;
@@ -20,8 +19,7 @@ use ckb_sdk::{
     traits::{CellQueryOptions, LiveCell},
     transaction::{
         builder::{ChangeBuilder, DefaultChangeBuilder},
-        handler::HandlerContexts,
-        input::{InputIterator, TransactionInput},
+        input::TransactionInput,
         signer::{SignContexts, TransactionSigner},
         TransactionBuilderConfiguration,
     },
@@ -33,14 +31,13 @@ use ckb_types::h256;
 use ckb_types::{
     bytes::Bytes,
     core::ScriptHashType,
-    packed::{Byte32, Bytes as PackedBytes, CellInput, Script, WitnessArgs},
+    packed::{Byte32, Bytes as PackedBytes, CellInput, CellOutput, Script, WitnessArgs},
     prelude::*,
     H256,
 };
 use molecule::prelude::Byte;
 
 use std::collections::HashMap;
-use std::thread::sleep;
 use std::time::Duration;
 
 impl Aggregator {
@@ -86,9 +83,220 @@ impl Aggregator {
             if cells_with_messge.is_empty() {
                 break;
             }
+
+            let burn_tx = self.create_burn_tx(cells_with_messge)?;
+            match wait_for_tx_confirmation(
+                self.branch_rpc_client.clone(),
+                burn_tx,
+                Duration::from_secs(15),
+            ) {
+                Ok(()) => info!("Transaction confirmed"),
+                Err(e) => info!("{}", e.to_string()),
+            }
         }
 
         Ok(())
+    }
+
+    pub fn create_burn_tx(&self, request_cells: Vec<(Cell, Transfer)>) -> Result<H256, Error> {
+        // get queue cell
+        let (queue_cell, queue_cell_data) = self.get_branch_queue_outbox_cell()?;
+
+        // build new queue
+        let mut request_ids = vec![];
+        let mut requests = vec![];
+        for (cell, transfer) in request_cells.clone() {
+            let request_content = RequestContent::new_builder()
+                .request_type(Byte::new(RequestType::BranchToCkb as u8))
+                .message(
+                    Message::new_builder()
+                        .set(MessageUnion::Transfer(transfer))
+                        .build(),
+                )
+                .build();
+            let request = Request::new_builder()
+                .request_cell(cell.out_point.into())
+                .request_content(request_content)
+                .build();
+            let request_id = request.as_bytes().pack().calc_raw_data_hash();
+            request_ids.push(request_id);
+            requests.push(request);
+        }
+
+        if !queue_cell_data.outbox().is_empty() {
+            return Err(Error::QueueOutboxHasUnprocessedRequests);
+        }
+        let existing_outbox = queue_cell_data
+            .outbox()
+            .as_builder()
+            .extend(request_ids)
+            .build();
+        let queue_data = queue_cell_data.as_builder().outbox(existing_outbox).build();
+        let queue_witness = Requests::new_builder().set(requests).build();
+
+        // build capacity provider lock
+        let (capacity_provider_lock_args, _) = get_sighash_lock_args_from_privkey(
+            self.config.branch_chain_capacity_provider_key_path.clone(),
+        )?;
+        let capacity_provider_lock = Script::new_builder()
+            .code_hash(SIGHASH_TYPE_HASH.pack())
+            .hash_type(ScriptHashType::Type.into())
+            .args(capacity_provider_lock_args.pack())
+            .build();
+
+        // build inputs
+        let inputs: Vec<CellInput> = std::iter::once(queue_cell.out_point.clone())
+            .chain(request_cells.iter().map(|(cell, _)| cell.out_point.clone()))
+            .map(|out_point| {
+                CellInput::new_builder()
+                    .previous_output(out_point.into())
+                    .build()
+            })
+            .collect();
+
+        // build outputs
+        let mut outputs = vec![queue_cell.output.clone().into()];
+        let mut outputs_data = vec![queue_data.as_bytes().pack()];
+        for (cell, _) in &request_cells {
+            if cell.output.type_.is_some() {
+                let output: CellOutput = cell.output.clone().into();
+                let output = output
+                    .as_builder()
+                    .lock(capacity_provider_lock.clone())
+                    .type_(None::<Script>.pack())
+                    .build();
+                outputs.push(output);
+
+                outputs_data.push(PackedBytes::default());
+            }
+        }
+
+        // cell deps
+        let secp256k1_cell_dep = self.get_branch_cell_dep(SECP256K1)?;
+        let xudt_cell_dep = self.get_branch_cell_dep(XUDT)?;
+        let request_cell_dep = self.get_branch_cell_dep(REQUEST_LOCK)?;
+        let queue_type_cell_dep = self.get_branch_cell_dep(TOKEN_MANAGER_TYPE)?;
+
+        // build transaction
+        let mut tx_builder = TransactionBuilder::default();
+        tx_builder
+            .cell_deps(vec![
+                secp256k1_cell_dep,
+                xudt_cell_dep,
+                request_cell_dep,
+                queue_type_cell_dep,
+            ])
+            .inputs(inputs)
+            .outputs(outputs)
+            .outputs_data(outputs_data)
+            .witness(
+                WitnessArgs::new_builder()
+                    .input_type(Some(queue_witness.as_bytes()).pack())
+                    .build()
+                    .as_bytes()
+                    .pack(),
+            )
+            .witnesses(vec![PackedBytes::default(); request_cells.len()]);
+
+        // group
+        #[allow(clippy::mutable_key_type)]
+        let mut lock_groups: HashMap<Byte32, ScriptGroup> = HashMap::default();
+        #[allow(clippy::mutable_key_type)]
+        let mut type_groups: HashMap<Byte32, ScriptGroup> = HashMap::default();
+        {
+            let lock_script: Script = queue_cell.output.lock.clone().into();
+            lock_groups
+                .entry(lock_script.calc_script_hash())
+                .or_insert_with(|| ScriptGroup::from_lock_script(&lock_script))
+                .input_indices
+                .push(0);
+            for (index, cell) in request_cells.iter().enumerate() {
+                let lock_script: Script = cell.0.output.lock.clone().into();
+                lock_groups
+                    .entry(lock_script.calc_script_hash())
+                    .or_insert_with(|| ScriptGroup::from_lock_script(&lock_script))
+                    .input_indices
+                    .push(index + 1);
+            }
+        }
+        for (output_idx, output) in tx_builder.get_outputs().clone().iter().enumerate() {
+            if let Some(type_script) = &output.type_().to_opt() {
+                type_groups
+                    .entry(type_script.calc_script_hash())
+                    .or_insert_with(|| ScriptGroup::from_type_script(type_script))
+                    .output_indices
+                    .push(output_idx);
+            }
+        }
+
+        // balance transaction
+        let network_info = NetworkInfo::new(NetworkType::Testnet, self.config.branch_uri.clone());
+        let fee_rate = self.fee_rate()?;
+        let configuration = {
+            let mut config =
+                TransactionBuilderConfiguration::new_with_network(network_info.clone())
+                    .map_err(|e| Error::TransactionBuildError(e.to_string()))?;
+            config.fee_rate = fee_rate;
+            config
+        };
+
+        let mut change_builder =
+            DefaultChangeBuilder::new(&configuration, capacity_provider_lock.clone(), Vec::new());
+        change_builder.init(&mut tx_builder);
+        {
+            let queue_cell_input = TransactionInput {
+                live_cell: queue_cell.clone().into(),
+                since: 0,
+            };
+            let _ = change_builder.check_balance(queue_cell_input, &mut tx_builder);
+            for (cell, _) in &request_cells {
+                let request_input = TransactionInput {
+                    live_cell: cell.to_owned().into(),
+                    since: 0,
+                };
+                let _ = change_builder.check_balance(request_input, &mut tx_builder);
+            }
+        };
+
+        let script_groups: Vec<ScriptGroup> = lock_groups
+            .into_values()
+            .chain(type_groups.into_values())
+            .collect();
+
+        let tx_view = change_builder.finalize(tx_builder);
+
+        let tx_with_groups = Some(TransactionWithScriptGroups::new(tx_view, script_groups));
+        let mut tx_with_groups = tx_with_groups.ok_or_else(|| {
+            let msg = "live cells are not enough".to_string();
+            Error::Other(msg)
+        })?;
+
+        // sign
+        let (_, message_queue_key) = get_sighash_lock_args_from_privkey(
+            self.config
+                .branch_chain_token_manager_outbox_lock_key_path
+                .clone(),
+        )?;
+        TransactionSigner::new(&network_info)
+            .sign_transaction(
+                &mut tx_with_groups,
+                &SignContexts::new_sighash(vec![message_queue_key]),
+            )
+            .map_err(|e| Error::TransactionSignError(e.to_string()))?;
+
+        // send tx
+        let tx_json = TransactionView::from(tx_with_groups.get_tx_view().clone());
+        debug!(
+            "burn tx: {}",
+            serde_json::to_string_pretty(&tx_json).unwrap()
+        );
+        let tx_hash = self
+            .branch_rpc_client
+            .send_transaction(tx_json.inner, None)
+            .map_err(|e| Error::TransactionSendError(format!("send transaction error: {}", e)))?;
+        info!("burn tx send: {:?}", tx_hash.pack());
+
+        Ok(tx_hash)
     }
 
     fn build_request_cell_search_option(&self) -> Result<CellQueryOptions, Error> {

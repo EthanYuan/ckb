@@ -160,6 +160,14 @@ impl Storage {
         }
     }
 
+    pub fn get_staged_tx(&self) -> Result<Option<H256>, Error> {
+        // Retrieve the staged transaction hash from the store
+        self.db
+            .get(b"staged_tx")
+            .map(|opt| opt.map(|bytes| H256::from_slice(&bytes).expect("Invalid H256")))
+            .map_err(|err| Error::DatabaseError(err.to_string()))
+    }
+
     /// Records a transaction that has been constructed but not yet confirmed
     pub fn record_staged_tx(&self, tx_hash: H256) -> Result<(), Error> {
         self.db

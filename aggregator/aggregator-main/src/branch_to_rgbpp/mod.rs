@@ -1,25 +1,19 @@
-pub use crate::schemas::leap::{CrossChainQueue, Request, Requests};
-use crate::{Aggregator, CKB_FEE_RATE_LIMIT, SIGHASH_TYPE_HASH};
+mod clear_queue_outbox;
 
-use aggregator_common::{
-    error::Error,
-    utils::{privkey::get_sighash_lock_args_from_privkey, QUEUE_TYPE},
-};
+pub use crate::schemas::leap::{CrossChainQueue, Request, Requests};
+use crate::{Aggregator, SIGHASH_TYPE_HASH};
+
+use aggregator_common::{error::Error, utils::privkey::get_sighash_lock_args_from_privkey};
 use ckb_channel::Receiver;
-use ckb_logger::{error, info, warn};
+use ckb_logger::{error, info};
 use ckb_sdk::{
-    rpc::{
-        ckb_indexer::{Cell, Order},
-        CkbRpcClient as RpcClient, ResponseFormatGetter,
-    },
+    rpc::ckb_indexer::{Cell, Order},
     traits::{CellQueryOptions, LiveCell, MaturityOption, PrimaryScriptType, QueryOrder},
 };
 use ckb_types::{
-    core::{FeeRate, ScriptHashType},
-    h256,
-    packed::{Byte32, CellDep, OutPoint, Script},
+    core::ScriptHashType,
+    packed::{Byte32, OutPoint, Script},
     prelude::*,
-    H256,
 };
 
 use std::collections::HashSet;
@@ -50,7 +44,7 @@ impl Aggregator {
 
             // get Branch queue outbox data
             let rgbpp_requests = poll_service.get_branch_queue_outbox_requests();
-            let (rgbpp_requests, queue_cell) = match rgbpp_requests {
+            let (rgbpp_requests, _queue_cell) = match rgbpp_requests {
                 Ok((rgbpp_requests, queue_cell)) => (rgbpp_requests, queue_cell),
                 Err(e) => {
                     error!("get RGB++ queue data error: {}", e.to_string());
@@ -59,6 +53,11 @@ impl Aggregator {
             };
 
             // clear queue
+            if rgbpp_requests.is_empty() {
+                let _ = self.check_storage();
+            } else {
+                let _ = self.create_clear_queue_outbox_tx();
+            }
 
             thread::sleep(poll_interval);
         }

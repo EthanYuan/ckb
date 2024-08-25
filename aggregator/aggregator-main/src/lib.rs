@@ -212,8 +212,8 @@ mod tests {
     #[test]
     fn calc_script() {
         let code_hash = "00000000000000000000000000000000000000000000000000545950455f4944";
-        let args = "57fdfd0617dcb74d1287bb78a7368a3a4bf9a790cfdcf5c1a105fd7cb406de0d";
-        let script_hash = "6283a479a3cf5d4276cd93594de9f1827ab9b55c7b05b3d28e4c2e0a696cfefd";
+        let args = "314f67c0ffd0c6fbffe886f03c6b00b42e4e66e3e71d32a66b8a38d69e6a4250";
+        let target_script_hash = "9c6933d977360f115a3e9cd5a2e0e475853681b80d775d93ad0f8969da343e56";
 
         let code_hash = H256::from_str(code_hash).unwrap();
         let args = Bytes::from(hex::decode(args).unwrap());
@@ -224,11 +224,12 @@ mod tests {
             .args(args.pack())
             .build();
 
-        println!("{:?}", script.calc_script_hash());
+        let script_hash: H256 = script.calc_script_hash().unpack();
+        println!("script_hash: {:?}", script_hash.to_string());
 
         assert_eq!(
             script.calc_script_hash().as_bytes(),
-            Bytes::from(hex::decode(script_hash).unwrap())
+            Bytes::from(hex::decode(target_script_hash).unwrap())
         );
     }
 }

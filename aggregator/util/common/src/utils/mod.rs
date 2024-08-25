@@ -3,6 +3,7 @@ pub mod privkey;
 pub const SECP256K1: &str = "secp256k1_blake160";
 pub const XUDT: &str = "xudt";
 pub const REQUEST_LOCK: &str = "request_lock";
+pub const TOKEN_MANAGER_TYPE: &str = "token_manager_type";
 pub const QUEUE_TYPE: &str = "queue_type";
 
 pub fn decode_udt_amount(data: &[u8]) -> Option<u128> {

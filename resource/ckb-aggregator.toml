@@ -52,7 +52,7 @@ branch_chain_capacity_provider_key_path = "../dev/branch_chain_capacity_provider
 branch_chain_token_manager_lock_key_path = "../dev/branch_chain_token_manager_key"
 branch_chain_token_manager_outbox_lock_key_path = "../dev/branch_chain_token_manager_outbox_key"
 
-[[aggregator.gbpp_scripts]]
+[[aggregator.rgbpp_scripts]]
 script_name = "secp256k1_blake160"
 script = '''
 {
@@ -142,7 +142,7 @@ cell_dep = '''
     "dep_type": "dep_group",
     "out_point": {
         "index": "0x0",
-        "tx_hash": "0xdd4fea4dc94ae5b3bd5a8a169f7edf6ea731689eec39b94f395a1a8ea1321205"
+        "tx_hash": "0x3e06cbfb8d09033449d6c2b49a5cda673b6640de7b2fabaa0a53d7c52722a20f"
     }
 }
 '''
@@ -161,7 +161,7 @@ cell_dep = '''
     "dep_type": "code",
     "out_point": {
         "index": "0x5",
-        "tx_hash": "0x7f1180615b86b8216cfb4a9b5421828c41f766f8d3111239e63d253d2ad81381"
+        "tx_hash": "0xe0606c8041a51eae120d6fd7e3b0aa9966f2a2c05ca2921ea556f6e7de1fff4b"
     }
 }
 '''
@@ -180,7 +180,26 @@ cell_dep = '''
     "dep_type": "code",
     "out_point": {
         "index": "0x6",
-        "tx_hash": "0x7f1180615b86b8216cfb4a9b5421828c41f766f8d3111239e63d253d2ad81381"
+        "tx_hash": "0xe0606c8041a51eae120d6fd7e3b0aa9966f2a2c05ca2921ea556f6e7de1fff4b"
+    }
+}
+'''
+
+[[aggregator.branch_scripts]]
+script_name = "token_manager_type"
+script = '''
+{
+    "args": "0x4242",
+    "code_hash": "0x9c6933d977360f115a3e9cd5a2e0e475853681b80d775d93ad0f8969da343e56",
+    "hash_type": "type"
+}
+'''
+cell_dep = '''
+{
+    "dep_type": "code",
+    "out_point": {
+        "index": "0x7",
+        "tx_hash": "0xe0606c8041a51eae120d6fd7e3b0aa9966f2a2c05ca2921ea556f6e7de1fff4b"
     }
 }
 '''

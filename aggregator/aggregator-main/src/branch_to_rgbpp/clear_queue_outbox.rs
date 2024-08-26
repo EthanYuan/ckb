@@ -34,11 +34,9 @@ use std::time::Duration;
 impl Aggregator {
     pub(crate) fn check_storage(&self) -> Result<(), Error> {
         if let Some(tx_hash) = self.store.get_staged_tx()? {
-            let hash = H256::from_slice(tx_hash.as_bytes())
-                .expect("Failed to convert staged transaction hash to H256");
             let tx = self
                 .branch_rpc_client
-                .get_transaction(hash.clone())
+                .get_transaction(tx_hash.clone())
                 .map_err(|e| Error::RpcError(format!("Failed to get transaction: {}", e)))?;
             match tx {
                 Some(tx) => {
@@ -53,7 +51,7 @@ impl Aggregator {
                             }
                         }
                         None => {
-                            let height = self.wait_for_transaction_packing(hash)?;
+                            let height = self.wait_for_transaction_packing(tx_hash.clone())?;
                             self.store.insert_branch_request(height.into(), tx_hash)?;
                             self.store.clear_staged_tx()?;
                         }
@@ -255,6 +253,8 @@ impl Aggregator {
                 "clear queue tx: {}",
                 serde_json::to_string_pretty(&tx_json).unwrap()
             );
+            // record staged tx
+            self.store.record_staged_tx(tx_json.hash)?;
             let tx_hash = self
                 .rgbpp_rpc_client
                 .send_transaction(tx_json.inner, None)

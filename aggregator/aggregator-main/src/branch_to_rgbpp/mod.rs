@@ -22,6 +22,8 @@ use std::collections::HashSet;
 use std::thread;
 use std::time::Duration;
 
+const CHALLENGE_PERIOD: u64 = 80; // blocks
+
 impl Aggregator {
     /// Collect Branch requests and send them to the RGB++ chain
     pub fn poll_branch_requests(&self, stop_rx: Receiver<()>) {
@@ -68,10 +70,17 @@ impl Aggregator {
                 };
                 match wait_for_tx_confirmation(
                     self.branch_rpc_client.clone(),
-                    H256(clear_queue_tx.0),
+                    clear_queue_tx.clone(),
                     Duration::from_secs(600),
                 ) {
-                    Ok(()) => {}
+                    Ok(height) => {
+                        self.store
+                            .insert_branch_request(height, clear_queue_tx)
+                            .expect("Failed to insert clear queue transaction into storage");
+                        self.store.clear_staged_tx().expect(
+                            "Failed to clear staged transactions after successful clear queue",
+                        );
+                    }
                     Err(e) => error!("{}", e.to_string()),
                 }
             }
@@ -101,6 +110,51 @@ impl Aggregator {
                 Err(_) => {
                     info!("Error receiving exit signal");
                     break;
+                }
+            }
+
+            let pending_request = self.store.get_earliest_pending();
+            match pending_request {
+                Ok(Some(request)) => {
+                    let tip = self.rgbpp_rpc_client.get_tip_block_number();
+                    let tip: u64 = match tip {
+                        Ok(tip) => tip.into(),
+                        Err(e) => {
+                            error!("{}", e.to_string());
+                            continue;
+                        }
+                    };
+                    if request.0 + CHALLENGE_PERIOD < tip {
+                        let unlock_tx = self.rgbpp_tx_builder.create_unlock_tx();
+                        let unlock_tx = match unlock_tx {
+                            Ok(unlock_tx) => {
+                                H256::from_slice(unlock_tx.as_bytes()).expect("unlock tx to H256")
+                            }
+                            Err(e) => {
+                                error!("{}", e.to_string());
+                                continue;
+                            }
+                        };
+                        match wait_for_tx_confirmation(
+                            self.rgbpp_rpc_client.clone(),
+                            H256(unlock_tx.0),
+                            Duration::from_secs(600),
+                        ) {
+                            Ok(height) => {
+                                self.store
+                                    .commit_branch_request(height, unlock_tx)
+                                    .expect("commit branch request");
+                            }
+                            Err(e) => error!("{}", e.to_string()),
+                        }
+                    }
+                }
+                Ok(None) => {
+                    info!("No pending request found");
+                }
+                Err(e) => {
+                    error!("{}", e.to_string());
+                    continue;
                 }
             }
 

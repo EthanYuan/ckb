@@ -72,7 +72,7 @@ impl Aggregator {
                 leap_tx,
                 Duration::from_secs(600),
             ) {
-                Ok(()) => {}
+                Ok(_) => {}
                 Err(e) => error!("{}", e.to_string()),
             }
 
@@ -91,7 +91,7 @@ impl Aggregator {
                     H256(update_queue_tx.0),
                     Duration::from_secs(600),
                 ) {
-                    Ok(()) => {}
+                    Ok(_) => {}
                     Err(e) => error!("{}", e.to_string()),
                 }
             }

@@ -181,23 +181,35 @@ fn get_asset_locks(lock_configs: Vec<LockConfig>) -> HashMap<H256, Script> {
 }
 
 fn wait_for_tx_confirmation(
-    _client: RpcClient,
-    _tx_hash: H256,
+    client: RpcClient,
+    tx_hash: H256,
     timeout: Duration,
-) -> Result<(), Error> {
+) -> Result<u64, Error> {
     let start = std::time::Instant::now();
 
     loop {
-        if true {
-            sleep(Duration::from_secs(8));
-            return Ok(());
+        let tx = client
+            .get_transaction(tx_hash.clone())
+            .map_err(|e| Error::RpcError(format!("Failed to get transaction: {}", e)))?;
+        match tx {
+            Some(tx) => {
+                if let Some(height) = tx.tx_status.block_number {
+                    return Ok(height.into());
+                }
+            }
+            None => {
+                return Err(Error::TransactionNotFound(format!(
+                    "Transaction not found: {:?}",
+                    tx_hash
+                )));
+            }
         }
-
         if start.elapsed() > timeout {
             return Err(Error::TimedOut(
                 "Transaction confirmation timed out".to_string(),
             ));
         }
+        sleep(Duration::from_secs(2));
     }
 }
 

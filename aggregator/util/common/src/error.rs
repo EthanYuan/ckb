@@ -24,14 +24,16 @@ pub enum Error {
     TransactionParseError(String),
     #[error("rpc error: {0}")]
     RpcError(String),
-    #[error("Timeout: {0}")]
+    #[error("timeout: {0}")]
     TimedOut(String),
-    #[error("Lock not found: {0}")]
+    #[error("lock not found: {0}")]
     LockNotFound(String),
-    #[error("Branch script not found: {0}")]
+    #[error("branch script not found: {0}")]
     BranchScriptNotFound(String),
     #[error("database error: {0}")]
     DatabaseError(String),
+    #[error("transaction not found: {0}")]
+    TransactionNotFound(String),
     #[error("other error: {0}")]
     Other(String),
 }

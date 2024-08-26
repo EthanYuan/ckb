@@ -90,7 +90,7 @@ impl Aggregator {
                 burn_tx,
                 Duration::from_secs(15),
             ) {
-                Ok(()) => info!("Transaction confirmed"),
+                Ok(_) => info!("Transaction confirmed"),
                 Err(e) => info!("{}", e.to_string()),
             }
         }

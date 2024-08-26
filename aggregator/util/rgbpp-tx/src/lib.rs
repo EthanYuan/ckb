@@ -8,10 +8,7 @@ pub use crate::schemas::leap::{self, CrossChainQueue, Request, Requests};
 
 use aggregator_common::{
     error::Error,
-    utils::{
-        privkey::{self, get_sighash_lock_args_from_privkey},
-        QUEUE_TYPE,
-    },
+    utils::{privkey::get_sighash_lock_args_from_privkey, QUEUE_TYPE},
 };
 use ckb_app_config::{AssetConfig, LockConfig, ScriptConfig};
 use ckb_logger::{info, warn};
@@ -45,6 +42,7 @@ pub const SIGHASH_TYPE_HASH: H256 =
 const CONFIRMATION_THRESHOLD: u64 = 24;
 /// CKB fee rate limit
 const CKB_FEE_RATE_LIMIT: u64 = 5000;
+const CKB_FEE_RATE_DEFAULT: u64 = 1000;
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 struct AssetInfo {
@@ -97,14 +95,21 @@ impl RgbppTxBuilder {
 
     fn fee_rate(&self) -> Result<u64, Error> {
         let value = {
-            let dynamic = self
+            let dynamic = match self
                 .rgbpp_rpc_client
                 .get_fee_rate_statistics(None)
                 .map_err(|e| Error::RpcError(format!("get dynamic fee rate error: {}", e)))?
-                .ok_or_else(|| Error::RpcError("get dynamic fee rate error: None".to_string()))
-                .map(|resp| resp.median)
-                .map(Into::into)
-                .map_err(|e| Error::RpcError(format!("get dynamic fee rate error: {}", e)))?;
+            {
+                Some(resp) => resp.median.into(),
+                None => {
+                    warn!(
+                        "dynamic CKB fee rate is None, using the default {}",
+                        FeeRate(CKB_FEE_RATE_DEFAULT)
+                    );
+                    CKB_FEE_RATE_DEFAULT
+                }
+            };
+
             info!("CKB fee rate: {} (dynamic)", FeeRate(dynamic));
             if dynamic > CKB_FEE_RATE_LIMIT {
                 warn!(

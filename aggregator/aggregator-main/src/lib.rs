@@ -24,7 +24,8 @@ use std::time::Duration;
 
 pub const SIGHASH_TYPE_HASH: H256 =
     h256!("0x9bd7e06f3ecf4be0f2fcd2188b23f1b9fcc88e5d4b65a8637b17723bbda3cce8");
-const CKB_FEE_RATE_LIMIT: u64 = 5000;
+const CKB_FEE_RATE_LIMIT: u64 = 100;
+const CKB_FEE_RATE_DEFAULT: u64 = 20;
 const CONFIRMATION_THRESHOLD: u64 = 24;
 
 /// Aggregator
@@ -97,14 +98,21 @@ impl Aggregator {
 
     fn fee_rate(&self) -> Result<u64, Error> {
         let value = {
-            let dynamic = self
+            let dynamic = match self
                 .branch_rpc_client
                 .get_fee_rate_statistics(None)
                 .map_err(|e| Error::RpcError(format!("get dynamic fee rate error: {}", e)))?
-                .ok_or_else(|| Error::RpcError("get dynamic fee rate error: None".to_string()))
-                .map(|resp| resp.median)
-                .map(Into::into)
-                .map_err(|e| Error::RpcError(format!("get dynamic fee rate error: {}", e)))?;
+            {
+                Some(resp) => resp.median.into(),
+                None => {
+                    warn!(
+                        "dynamic CKB fee rate is None, using the default {}",
+                        FeeRate(CKB_FEE_RATE_DEFAULT)
+                    );
+                    CKB_FEE_RATE_DEFAULT
+                }
+            };
+
             info!("CKB fee rate: {} (dynamic)", FeeRate(dynamic));
             if dynamic > CKB_FEE_RATE_LIMIT {
                 warn!(

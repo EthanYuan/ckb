@@ -12,17 +12,12 @@ use aggregator_common::{
     },
 };
 use ckb_jsonrpc_types::TransactionView;
-use ckb_logger::{debug, info};
+use ckb_logger::info;
 use ckb_sdk::{
     core::TransactionBuilder,
     rpc::ckb_indexer::{Cell, Order},
     traits::{CellQueryOptions, LiveCell},
-    transaction::{
-        builder::{ChangeBuilder, DefaultChangeBuilder},
-        input::TransactionInput,
-        signer::{SignContexts, TransactionSigner},
-        TransactionBuilderConfiguration,
-    },
+    transaction::signer::{SignContexts, TransactionSigner},
     types::{NetworkInfo, NetworkType, TransactionWithScriptGroups},
     ScriptGroup, Since, SinceType,
 };
@@ -229,47 +224,14 @@ impl Aggregator {
             }
         }
 
-        // balance transaction
+        // build transaction
         let network_info = NetworkInfo::new(NetworkType::Testnet, self.config.branch_uri.clone());
-        let fee_rate = self.fee_rate()?;
-        let configuration = {
-            let mut config =
-                TransactionBuilderConfiguration::new_with_network(network_info.clone())
-                    .map_err(|e| Error::TransactionBuildError(e.to_string()))?;
-            config.fee_rate = fee_rate;
-            config
-        };
-
-        let mut change_builder =
-            DefaultChangeBuilder::new(&configuration, capacity_provider_lock.clone(), Vec::new());
-        change_builder.init(&mut tx_builder);
-        {
-            let queue_cell_input = TransactionInput {
-                live_cell: queue_cell.clone().into(),
-                since: 0,
-            };
-            let _ = change_builder.check_balance(queue_cell_input, &mut tx_builder);
-            for (cell, _) in &request_cells {
-                let request_input = TransactionInput {
-                    live_cell: cell.to_owned().into(),
-                    since: 0,
-                };
-                let _ = change_builder.check_balance(request_input, &mut tx_builder);
-            }
-        };
-
         let script_groups: Vec<ScriptGroup> = lock_groups
             .into_values()
             .chain(type_groups.into_values())
             .collect();
-
-        let tx_view = change_builder.finalize(tx_builder);
-
-        let tx_with_groups = Some(TransactionWithScriptGroups::new(tx_view, script_groups));
-        let mut tx_with_groups = tx_with_groups.ok_or_else(|| {
-            let msg = "live cells are not enough".to_string();
-            Error::Other(msg)
-        })?;
+        let tx_view = tx_builder.build();
+        let mut tx_with_groups = TransactionWithScriptGroups::new(tx_view, script_groups);
 
         // sign
         let (_, message_queue_key) = get_sighash_lock_args_from_privkey(
@@ -286,7 +248,7 @@ impl Aggregator {
 
         // send tx
         let tx_json = TransactionView::from(tx_with_groups.get_tx_view().clone());
-        debug!(
+        info!(
             "burn tx: {}",
             serde_json::to_string_pretty(&tx_json).unwrap()
         );

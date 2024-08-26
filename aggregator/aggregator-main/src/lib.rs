@@ -2,7 +2,7 @@
 
 pub(crate) mod branch_to_rgbpp;
 pub(crate) mod rgbpp_to_branch;
-pub(crate) mod schemas;
+pub mod schemas;
 
 use aggregator_common::{error::Error, utils::encode_udt_amount};
 use aggregator_rgbpp_tx::RgbppTxBuilder;
@@ -45,7 +45,7 @@ pub struct Aggregator {
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
-struct ScriptInfo {
+pub struct ScriptInfo {
     pub script: Script,
     pub cell_dep: CellDep,
 }

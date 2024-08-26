@@ -40,10 +40,23 @@ dependencies = [
 ]
 
 [[package]]
+name = "aggregator-common"
+version = "0.1.0"
+source = "git+https://github.com/ethanyuan/ckb?branch=v0.116.1-branch-chain#deee502abbe3cc8192ab886c640aea14688a828f"
+dependencies = [
+ "ckb-gen-types 0.116.1 (git+https://github.com/ethanyuan/ckb?branch=v0.116.1-branch-chain)",
+ "ckb-hash 0.116.1 (git+https://github.com/ethanyuan/ckb?branch=v0.116.1-branch-chain)",
+ "ckb-types 0.116.1 (git+https://github.com/ethanyuan/ckb?branch=v0.116.1-branch-chain)",
+ "molecule",
+ "secp256k1",
+ "thiserror",
+]
+
+[[package]]
 name = "aggregator-main"
 version = "0.1.0"
 dependencies = [
- "aggregator-common",
+ "aggregator-common 0.1.0",
  "aggregator-rgbpp-tx",
  "aggregator-storage",
  "ckb-app-config",
@@ -70,7 +83,7 @@ dependencies = [
 name = "aggregator-rgbpp-tx"
 version = "0.1.0"
 dependencies = [
- "aggregator-common",
+ "aggregator-common 0.1.0",
  "ckb-app-config",
  "ckb-gen-types 0.116.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "ckb-hash 0.116.1",
@@ -90,7 +103,7 @@ dependencies = [
 name = "aggregator-storage"
 version = "0.1.0"
 dependencies = [
- "aggregator-common",
+ "aggregator-common 0.1.0",
  "ckb-rocksdb",
  "ckb-types 0.116.1 (git+https://github.com/ethanyuan/ckb?branch=v0.116.1-branch-chain)",
  "tempfile",
@@ -863,7 +876,7 @@ dependencies = [
 name = "ckb-chain-spec"
 version = "0.116.1"
 dependencies = [
- "aggregator-common",
+ "aggregator-common 0.1.0",
  "cacache",
  "ckb-constant 0.116.1",
  "ckb-crypto 0.116.1",
@@ -909,8 +922,9 @@ dependencies = [
 [[package]]
 name = "ckb-chain-spec"
 version = "0.116.1"
-source = "git+https://github.com/ethanyuan/ckb?branch=v0.116.1-branch-chain#58be3ea7aec2c25d9f53a12360a38f6151629bbe"
+source = "git+https://github.com/ethanyuan/ckb?branch=v0.116.1-branch-chain#deee502abbe3cc8192ab886c640aea14688a828f"
 dependencies = [
+ "aggregator-common 0.1.0 (git+https://github.com/ethanyuan/ckb?branch=v0.116.1-branch-chain)",
  "cacache",
  "ckb-constant 0.116.1 (git+https://github.com/ethanyuan/ckb?branch=v0.116.1-branch-chain)",
  "ckb-crypto 0.116.1 (git+https://github.com/ethanyuan/ckb?branch=v0.116.1-branch-chain)",
@@ -947,7 +961,7 @@ dependencies = [
 [[package]]
 name = "ckb-channel"
 version = "0.116.1"
-source = "git+https://github.com/ethanyuan/ckb?branch=v0.116.1-branch-chain#58be3ea7aec2c25d9f53a12360a38f6151629bbe"
+source = "git+https://github.com/ethanyuan/ckb?branch=v0.116.1-branch-chain#deee502abbe3cc8192ab886c640aea14688a828f"
 dependencies = [
  "crossbeam-channel",
 ]
@@ -965,7 +979,7 @@ checksum = "5baf91b16a3b8360c85211dfdff3d2adc0a1f3ae571ea6b1637d55d6b227e312"
 [[package]]
 name = "ckb-constant"
 version = "0.116.1"
-source = "git+https://github.com/ethanyuan/ckb?branch=v0.116.1-branch-chain#58be3ea7aec2c25d9f53a12360a38f6151629bbe"
+source = "git+https://github.com/ethanyuan/ckb?branch=v0.116.1-branch-chain#deee502abbe3cc8192ab886c640aea14688a828f"
 
 [[package]]
 name = "ckb-crypto"
@@ -996,7 +1010,7 @@ dependencies = [
 [[package]]
 name = "ckb-crypto"
 version = "0.116.1"
-source = "git+https://github.com/ethanyuan/ckb?branch=v0.116.1-branch-chain#58be3ea7aec2c25d9f53a12360a38f6151629bbe"
+source = "git+https://github.com/ethanyuan/ckb?branch=v0.116.1-branch-chain#deee502abbe3cc8192ab886c640aea14688a828f"
 dependencies = [
  "ckb-fixed-hash 0.116.1 (git+https://github.com/ethanyuan/ckb?branch=v0.116.1-branch-chain)",
  "faster-hex",
@@ -1044,7 +1058,7 @@ dependencies = [
 [[package]]
 name = "ckb-dao-utils"
 version = "0.116.1"
-source = "git+https://github.com/ethanyuan/ckb?branch=v0.116.1-branch-chain#58be3ea7aec2c25d9f53a12360a38f6151629bbe"
+source = "git+https://github.com/ethanyuan/ckb?branch=v0.116.1-branch-chain#deee502abbe3cc8192ab886c640aea14688a828f"
 dependencies = [
  "byteorder",
  "ckb-error 0.116.1 (git+https://github.com/ethanyuan/ckb?branch=v0.116.1-branch-chain)",
@@ -1110,7 +1124,7 @@ dependencies = [
 [[package]]
 name = "ckb-error"
 version = "0.116.1"
-source = "git+https://github.com/ethanyuan/ckb?branch=v0.116.1-branch-chain#58be3ea7aec2c25d9f53a12360a38f6151629bbe"
+source = "git+https://github.com/ethanyuan/ckb?branch=v0.116.1-branch-chain#deee502abbe3cc8192ab886c640aea14688a828f"
 dependencies = [
  "anyhow",
  "ckb-occupied-capacity 0.116.1 (git+https://github.com/ethanyuan/ckb?branch=v0.116.1-branch-chain)",
@@ -1139,7 +1153,7 @@ dependencies = [
 [[package]]
 name = "ckb-fixed-hash"
 version = "0.116.1"
-source = "git+https://github.com/ethanyuan/ckb?branch=v0.116.1-branch-chain#58be3ea7aec2c25d9f53a12360a38f6151629bbe"
+source = "git+https://github.com/ethanyuan/ckb?branch=v0.116.1-branch-chain#deee502abbe3cc8192ab886c640aea14688a828f"
 dependencies = [
  "ckb-fixed-hash-core 0.116.1 (git+https://github.com/ethanyuan/ckb?branch=v0.116.1-branch-chain)",
  "ckb-fixed-hash-macros 0.116.1 (git+https://github.com/ethanyuan/ckb?branch=v0.116.1-branch-chain)",
@@ -1171,7 +1185,7 @@ dependencies = [
 [[package]]
 name = "ckb-fixed-hash-core"
 version = "0.116.1"
-source = "git+https://github.com/ethanyuan/ckb?branch=v0.116.1-branch-chain#58be3ea7aec2c25d9f53a12360a38f6151629bbe"
+source = "git+https://github.com/ethanyuan/ckb?branch=v0.116.1-branch-chain#deee502abbe3cc8192ab886c640aea14688a828f"
 dependencies = [
  "ckb_schemars",
  "faster-hex",
@@ -1204,7 +1218,7 @@ dependencies = [
 [[package]]
 name = "ckb-fixed-hash-macros"
 version = "0.116.1"
-source = "git+https://github.com/ethanyuan/ckb?branch=v0.116.1-branch-chain#58be3ea7aec2c25d9f53a12360a38f6151629bbe"
+source = "git+https://github.com/ethanyuan/ckb?branch=v0.116.1-branch-chain#deee502abbe3cc8192ab886c640aea14688a828f"
 dependencies = [
  "ckb-fixed-hash-core 0.116.1 (git+https://github.com/ethanyuan/ckb?branch=v0.116.1-branch-chain)",
  "proc-macro2",
@@ -1259,7 +1273,7 @@ dependencies = [
 [[package]]
 name = "ckb-gen-types"
 version = "0.116.1"
-source = "git+https://github.com/ethanyuan/ckb?branch=v0.116.1-branch-chain#58be3ea7aec2c25d9f53a12360a38f6151629bbe"
+source = "git+https://github.com/ethanyuan/ckb?branch=v0.116.1-branch-chain#deee502abbe3cc8192ab886c640aea14688a828f"
 dependencies = [
  "cfg-if 1.0.0",
  "ckb-error 0.116.1 (git+https://github.com/ethanyuan/ckb?branch=v0.116.1-branch-chain)",
@@ -1291,7 +1305,7 @@ dependencies = [
 [[package]]
 name = "ckb-hash"
 version = "0.116.1"
-source = "git+https://github.com/ethanyuan/ckb?branch=v0.116.1-branch-chain#58be3ea7aec2c25d9f53a12360a38f6151629bbe"
+source = "git+https://github.com/ethanyuan/ckb?branch=v0.116.1-branch-chain#deee502abbe3cc8192ab886c640aea14688a828f"
 dependencies = [
  "blake2b-ref",
  "blake2b-rs",
@@ -1377,7 +1391,7 @@ dependencies = [
 [[package]]
 name = "ckb-jsonrpc-types"
 version = "0.116.1"
-source = "git+https://github.com/ethanyuan/ckb?branch=v0.116.1-branch-chain#58be3ea7aec2c25d9f53a12360a38f6151629bbe"
+source = "git+https://github.com/ethanyuan/ckb?branch=v0.116.1-branch-chain#deee502abbe3cc8192ab886c640aea14688a828f"
 dependencies = [
  "ckb-types 0.116.1 (git+https://github.com/ethanyuan/ckb?branch=v0.116.1-branch-chain)",
  "ckb_schemars",
@@ -1469,7 +1483,7 @@ dependencies = [
 [[package]]
 name = "ckb-logger"
 version = "0.116.1"
-source = "git+https://github.com/ethanyuan/ckb?branch=v0.116.1-branch-chain#58be3ea7aec2c25d9f53a12360a38f6151629bbe"
+source = "git+https://github.com/ethanyuan/ckb?branch=v0.116.1-branch-chain#deee502abbe3cc8192ab886c640aea14688a828f"
 dependencies = [
  "log",
 ]
@@ -1736,7 +1750,7 @@ dependencies = [
 [[package]]
 name = "ckb-occupied-capacity"
 version = "0.116.1"
-source = "git+https://github.com/ethanyuan/ckb?branch=v0.116.1-branch-chain#58be3ea7aec2c25d9f53a12360a38f6151629bbe"
+source = "git+https://github.com/ethanyuan/ckb?branch=v0.116.1-branch-chain#deee502abbe3cc8192ab886c640aea14688a828f"
 dependencies = [
  "ckb-occupied-capacity-core 0.116.1 (git+https://github.com/ethanyuan/ckb?branch=v0.116.1-branch-chain)",
  "ckb-occupied-capacity-macros 0.116.1 (git+https://github.com/ethanyuan/ckb?branch=v0.116.1-branch-chain)",
@@ -1761,7 +1775,7 @@ dependencies = [
 [[package]]
 name = "ckb-occupied-capacity-core"
 version = "0.116.1"
-source = "git+https://github.com/ethanyuan/ckb?branch=v0.116.1-branch-chain#58be3ea7aec2c25d9f53a12360a38f6151629bbe"
+source = "git+https://github.com/ethanyuan/ckb?branch=v0.116.1-branch-chain#deee502abbe3cc8192ab886c640aea14688a828f"
 dependencies = [
  "serde",
 ]
@@ -1789,7 +1803,7 @@ dependencies = [
 [[package]]
 name = "ckb-occupied-capacity-macros"
 version = "0.116.1"
-source = "git+https://github.com/ethanyuan/ckb?branch=v0.116.1-branch-chain#58be3ea7aec2c25d9f53a12360a38f6151629bbe"
+source = "git+https://github.com/ethanyuan/ckb?branch=v0.116.1-branch-chain#deee502abbe3cc8192ab886c640aea14688a828f"
 dependencies = [
  "ckb-occupied-capacity-core 0.116.1 (git+https://github.com/ethanyuan/ckb?branch=v0.116.1-branch-chain)",
  "quote",
@@ -1825,7 +1839,7 @@ dependencies = [
 [[package]]
 name = "ckb-pow"
 version = "0.116.1"
-source = "git+https://github.com/ethanyuan/ckb?branch=v0.116.1-branch-chain#58be3ea7aec2c25d9f53a12360a38f6151629bbe"
+source = "git+https://github.com/ethanyuan/ckb?branch=v0.116.1-branch-chain#deee502abbe3cc8192ab886c640aea14688a828f"
 dependencies = [
  "byteorder",
  "ckb-hash 0.116.1 (git+https://github.com/ethanyuan/ckb?branch=v0.116.1-branch-chain)",
@@ -1866,7 +1880,7 @@ dependencies = [
 [[package]]
 name = "ckb-rational"
 version = "0.116.1"
-source = "git+https://github.com/ethanyuan/ckb?branch=v0.116.1-branch-chain#58be3ea7aec2c25d9f53a12360a38f6151629bbe"
+source = "git+https://github.com/ethanyuan/ckb?branch=v0.116.1-branch-chain#deee502abbe3cc8192ab886c640aea14688a828f"
 dependencies = [
  "numext-fixed-uint",
  "serde",
@@ -1904,7 +1918,7 @@ dependencies = [
 [[package]]
 name = "ckb-resource"
 version = "0.116.1"
-source = "git+https://github.com/ethanyuan/ckb?branch=v0.116.1-branch-chain#58be3ea7aec2c25d9f53a12360a38f6151629bbe"
+source = "git+https://github.com/ethanyuan/ckb?branch=v0.116.1-branch-chain#deee502abbe3cc8192ab886c640aea14688a828f"
 dependencies = [
  "ckb-system-scripts",
  "ckb-types 0.116.1 (git+https://github.com/ethanyuan/ckb?branch=v0.116.1-branch-chain)",
@@ -2078,7 +2092,7 @@ dependencies = [
 [[package]]
 name = "ckb-script"
 version = "0.116.1"
-source = "git+https://github.com/ethanyuan/ckb?branch=v0.116.1-branch-chain#58be3ea7aec2c25d9f53a12360a38f6151629bbe"
+source = "git+https://github.com/ethanyuan/ckb?branch=v0.116.1-branch-chain#deee502abbe3cc8192ab886c640aea14688a828f"
 dependencies = [
  "byteorder",
  "ckb-chain-spec 0.116.1 (git+https://github.com/ethanyuan/ckb?branch=v0.116.1-branch-chain)",
@@ -2137,7 +2151,7 @@ dependencies = [
 [[package]]
 name = "ckb-sdk"
 version = "3.2.1"
-source = "git+https://github.com/ethanyuan/ckb-sdk-rust?branch=v3.2.1-branch-chain#16dbe10bfce936ef1ec14b086694ae0933e388b6"
+source = "git+https://github.com/ethanyuan/ckb-sdk-rust?branch=v3.2.1-branch-chain#74798c6b793fe8e6e82ac80c75873ce925e597f7"
 dependencies = [
  "anyhow",
  "bech32",
@@ -2357,7 +2371,7 @@ dependencies = [
 [[package]]
 name = "ckb-traits"
 version = "0.116.1"
-source = "git+https://github.com/ethanyuan/ckb?branch=v0.116.1-branch-chain#58be3ea7aec2c25d9f53a12360a38f6151629bbe"
+source = "git+https://github.com/ethanyuan/ckb?branch=v0.116.1-branch-chain#deee502abbe3cc8192ab886c640aea14688a828f"
 dependencies = [
  "ckb-types 0.116.1 (git+https://github.com/ethanyuan/ckb?branch=v0.116.1-branch-chain)",
 ]
@@ -2454,7 +2468,7 @@ dependencies = [
 [[package]]
 name = "ckb-types"
 version = "0.116.1"
-source = "git+https://github.com/ethanyuan/ckb?branch=v0.116.1-branch-chain#58be3ea7aec2c25d9f53a12360a38f6151629bbe"
+source = "git+https://github.com/ethanyuan/ckb?branch=v0.116.1-branch-chain#deee502abbe3cc8192ab886c640aea14688a828f"
 dependencies = [
  "bit-vec",
  "bytes",
@@ -3822,7 +3836,7 @@ dependencies = [
  "httpdate",
  "itoa",
  "pin-project-lite",
- "socket2 0.5.6",
+ "socket2 0.4.10",
  "tokio",
  "tower-service",
  "tracing",

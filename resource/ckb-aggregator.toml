@@ -41,7 +41,7 @@ dsn = "" # {{
 
 [aggregator]
 # challenge period in blocks
-challenge_period = 80
+challenge_period = 90
 
 # RGB++ uri
 rgbpp_uri = "https://testnet.ckb.dev"

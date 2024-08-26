@@ -56,6 +56,14 @@ impl Storage {
         self.db
             .put(key, value)
             .map_err(|err| DatabaseError(err.to_string()))?;
+
+        // If this is the first pending request or if the earliest_pending is not set, update it
+        if self.get_earliest_pending()?.is_none() {
+            self.db
+                .put(b"earliest_pending", &key)
+                .map_err(|err: rocksdb::Error| Error::DatabaseError(err.to_string()))?;
+        }
+
         Ok(())
     }
 
@@ -145,19 +153,26 @@ impl Storage {
     }
 
     /// Retrieves the highest height in the database
-    pub fn get_last_branch_request(&self) -> Result<Option<(u64, H256)>, Error> {
+    pub fn get_last_branch_request(
+        &self,
+    ) -> Result<Option<(u64, BranchRequestStatus, H256)>, Error> {
         let mut iter = self.db.iterator(IteratorMode::End);
-        if let Some((key, value)) = iter.next() {
-            let height =
-                u64::from_be_bytes(key.as_ref().try_into().map_err(
+
+        while let Some((key, value)) = iter.next() {
+            // Only process keys that have the correct length for a u64 height (8 bytes)
+            if key.len() == 8 {
+                let height = u64::from_be_bytes(key.as_ref().try_into().map_err(
                     |err: std::array::TryFromSliceError| DatabaseError(err.to_string()),
                 )?);
-            let tx = H256::from_slice(&value[1..33])
-                .map_err(|_| DatabaseError("Failed to parse stored transaction".into()))?;
-            Ok(Some((height, tx)))
-        } else {
-            Ok(None)
+
+                let status = BranchRequestStatus::try_from(value[0])
+                    .map_err(|_| DatabaseError("Failed to parse stored status".into()))?;
+                let tx = H256::from_slice(&value[1..33])
+                    .map_err(|_| DatabaseError("Failed to parse stored transaction".into()))?;
+                return Ok(Some((height, status, tx)));
+            }
         }
+        Ok(None)
     }
 
     pub fn get_staged_tx(&self) -> Result<Option<H256>, Error> {
@@ -206,6 +221,18 @@ impl Storage {
             Ok(false)
         }
     }
+
+    /// Counts the total number of entries where the key is a `height` (u64 encoded as 8 bytes)
+    pub fn count_entries(&self) -> Result<u64, Error> {
+        let mut count = 0;
+        let iter = self.db.iterator(IteratorMode::Start);
+        for (key, _) in iter {
+            if key.len() == 8 {
+                count += 1;
+            }
+        }
+        Ok(count)
+    }
 }
 
 #[cfg(test)]
@@ -237,7 +264,11 @@ mod tests {
         let last_request = store
             .get_last_branch_request()
             .expect("failed to get last branch request");
-        assert_eq!(last_request, Some((3, H256::default())));
+
+        assert_eq!(
+            last_request,
+            Some((3, BranchRequestStatus::Pending, H256::default()))
+        );
     }
 
     #[test]
@@ -290,6 +321,25 @@ mod tests {
     }
 
     #[test]
+    fn test_earliest_pending_with_only_inserted_requests() {
+        let store = setup_store();
+
+        // Insert branch requests without committing them
+        store
+            .insert_branch_request(1, H256::default())
+            .expect("failed to insert request 1");
+        store
+            .insert_branch_request(2, H256::default())
+            .expect("failed to insert request 2");
+
+        // Check if the earliest pending is the first inserted request
+        let earliest_pending = store
+            .get_earliest_pending()
+            .expect("failed to get earliest pending");
+        assert_eq!(earliest_pending, Some((1, H256::default())));
+    }
+
+    #[test]
     fn test_commit_height_invalid_tx() {
         let store = setup_store();
 
@@ -312,5 +362,69 @@ mod tests {
             .get_last_branch_request()
             .expect("failed to get last branch request");
         assert_eq!(last_request, None);
+    }
+
+    #[test]
+    fn test_count_height_entries() {
+        let store = setup_store();
+
+        // Insert some branch requests
+        store
+            .insert_branch_request(1, H256::default())
+            .expect("failed to insert request 1");
+        store
+            .insert_branch_request(2, H256::default())
+            .expect("failed to insert request 2");
+        store
+            .insert_branch_request(3, H256::default())
+            .expect("failed to insert request 3");
+
+        // Count the height entries
+        let count = store
+            .count_entries()
+            .expect("failed to count height entries");
+
+        // Verify the count
+        assert_eq!(count, 3);
+    }
+
+    #[test]
+    fn test_count_height_entries_with_non_height_keys() {
+        let store = setup_store();
+
+        // Insert some branch requests
+        store
+            .insert_branch_request(1, H256::default())
+            .expect("failed to insert request 1");
+        store
+            .insert_branch_request(2, H256::default())
+            .expect("failed to insert request 2");
+
+        // Insert a non-height key (e.g., staged_tx)
+        store
+            .db
+            .put(b"staged_tx", H256::default().as_bytes())
+            .expect("failed to insert non-height key");
+
+        // Count the height entries
+        let count = store
+            .count_entries()
+            .expect("failed to count height entries");
+
+        // Verify the count
+        assert_eq!(count, 2); // The staged_tx key should not be counted
+    }
+
+    #[test]
+    fn test_count_height_entries_empty_store() {
+        let store = setup_store();
+
+        // Count the height entries in an empty store
+        let count = store
+            .count_entries()
+            .expect("failed to count height entries");
+
+        // Verify the count
+        assert_eq!(count, 0);
     }
 }

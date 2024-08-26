@@ -22,8 +22,6 @@ use std::collections::HashSet;
 use std::thread;
 use std::time::Duration;
 
-const CHALLENGE_PERIOD: u64 = 80; // blocks
-
 impl Aggregator {
     /// Collect Branch requests and send them to the RGB++ chain
     pub fn poll_branch_requests(&self, stop_rx: Receiver<()>) {
@@ -124,7 +122,7 @@ impl Aggregator {
                             continue;
                         }
                     };
-                    if request.0 + CHALLENGE_PERIOD < tip {
+                    if request.0 + self.config.challenge_period < tip {
                         let unlock_tx = self.rgbpp_tx_builder.create_unlock_tx();
                         let unlock_tx = match unlock_tx {
                             Ok(unlock_tx) => {

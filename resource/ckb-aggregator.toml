@@ -40,10 +40,14 @@ dsn = "" # {{
 # interval = 600
 
 [aggregator]
+# challenge period in blocks
+challenge_period = 80
+
 # RGB++ uri
 rgbpp_uri = "https://testnet.ckb.dev"
 rgbpp_ckb_provider_key_path = "../dev/rgbpp_ckb_provider_key"
 rgbpp_queue_lock_key_path = "../dev/rgbpp_queue_lock_key"
+rgbpp_queue_inbox_lock_key_path = "../dev/rgbpp_queue_inbox_lock_key"
 rgbpp_custodian_lock_key_path = "../dev/rgbpp_custodian_lock_key"
 
 # Branch Chain

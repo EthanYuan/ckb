@@ -70,7 +70,7 @@ impl Aggregator {
             match wait_for_tx_confirmation(
                 poll_service.branch_rpc_client.clone(),
                 leap_tx,
-                Duration::from_secs(600),
+                Duration::from_secs(30),
             ) {
                 Ok(_) => {}
                 Err(e) => error!("{}", e.to_string()),
@@ -89,7 +89,7 @@ impl Aggregator {
                 match wait_for_tx_confirmation(
                     poll_service.rgbpp_rpc_client.clone(),
                     H256(update_queue_tx.0),
-                    Duration::from_secs(600),
+                    Duration::from_secs(30),
                 ) {
                     Ok(_) => {}
                     Err(e) => error!("{}", e.to_string()),

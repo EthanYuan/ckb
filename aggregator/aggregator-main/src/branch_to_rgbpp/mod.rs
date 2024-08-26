@@ -69,7 +69,7 @@ impl Aggregator {
                 match wait_for_tx_confirmation(
                     self.branch_rpc_client.clone(),
                     clear_queue_tx.clone(),
-                    Duration::from_secs(600),
+                    Duration::from_secs(30),
                 ) {
                     Ok(height) => {
                         self.store
@@ -113,7 +113,7 @@ impl Aggregator {
 
             let pending_request = self.store.get_earliest_pending();
             match pending_request {
-                Ok(Some(request)) => {
+                Ok(Some((height, tx_hash))) => {
                     let tip = self.rgbpp_rpc_client.get_tip_block_number();
                     let tip: u64 = match tip {
                         Ok(tip) => tip.into(),
@@ -122,11 +122,13 @@ impl Aggregator {
                             continue;
                         }
                     };
-                    if request.0 + self.config.challenge_period < tip {
-                        let unlock_tx = self.rgbpp_tx_builder.create_unlock_tx();
-                        let unlock_tx = match unlock_tx {
-                            Ok(unlock_tx) => {
-                                H256::from_slice(unlock_tx.as_bytes()).expect("unlock tx to H256")
+                    if height + self.config.challenge_period < tip {
+                        let inbox_tx = self
+                            .rgbpp_tx_builder
+                            .create_add_inbox_tx(height, tx_hash.0.into());
+                        let inbox_tx = match inbox_tx {
+                            Ok(inbox_tx) => {
+                                H256::from_slice(inbox_tx.as_bytes()).expect("unlock tx to H256")
                             }
                             Err(e) => {
                                 error!("{}", e.to_string());
@@ -135,12 +137,12 @@ impl Aggregator {
                         };
                         match wait_for_tx_confirmation(
                             self.rgbpp_rpc_client.clone(),
-                            H256(unlock_tx.0),
-                            Duration::from_secs(600),
+                            H256(inbox_tx.0),
+                            Duration::from_secs(30),
                         ) {
                             Ok(height) => {
                                 self.store
-                                    .commit_branch_request(height, unlock_tx)
+                                    .commit_branch_request(height, inbox_tx)
                                     .expect("commit branch request");
                             }
                             Err(e) => error!("{}", e.to_string()),

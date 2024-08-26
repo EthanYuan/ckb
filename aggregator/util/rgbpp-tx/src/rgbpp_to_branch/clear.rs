@@ -31,7 +31,8 @@ use std::collections::HashMap;
 impl RgbppTxBuilder {
     pub fn create_clear_queue_tx(&self) -> Result<H256, Error> {
         // get queue cell
-        let (queue_cell, queue_cell_data) = self.get_rgbpp_queue_outbox_cell()?;
+        let (queue_cell, queue_cell_data) =
+            self.get_rgbpp_queue_cell(self.rgbpp_queue_lock_key_path.clone())?;
         info!(
             "The queue contains {} items that need to be cleared.",
             queue_cell_data.outbox().len()

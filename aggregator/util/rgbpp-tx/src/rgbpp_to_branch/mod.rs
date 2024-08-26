@@ -15,11 +15,12 @@ use ckb_types::{
     prelude::*,
 };
 
-use std::collections::HashSet;
+use std::{collections::HashSet, path::PathBuf};
 
 impl RgbppTxBuilder {
     pub fn get_rgbpp_queue_outbox_requests(&self) -> Result<(Vec<Request>, OutPoint), Error> {
-        let (queue_cell, queue_cell_data) = self.get_rgbpp_queue_outbox_cell()?;
+        let (queue_cell, queue_cell_data) =
+            self.get_rgbpp_queue_cell(self.rgbpp_queue_lock_key_path.clone())?;
         if queue_cell_data.outbox().is_empty() {
             info!("No requests in queue");
             return Ok((vec![], OutPoint::default()));
@@ -50,10 +51,13 @@ impl RgbppTxBuilder {
         }
     }
 
-    pub(crate) fn get_rgbpp_queue_outbox_cell(&self) -> Result<(Cell, CrossChainQueue), Error> {
+    pub(crate) fn get_rgbpp_queue_cell(
+        &self,
+        privkey: PathBuf,
+    ) -> Result<(Cell, CrossChainQueue), Error> {
         info!("Scan RGB++ Message Queue ...");
 
-        let queue_cell_search_option = self.build_message_queue_cell_search_option()?;
+        let queue_cell_search_option = self.build_message_queue_cell_search_option(privkey)?;
         let queue_cell = self
             .rgbpp_rpc_client
             .get_cells(queue_cell_search_option.into(), Order::Asc, 1.into(), None)

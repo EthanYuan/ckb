@@ -102,7 +102,8 @@ impl RgbppTxBuilder {
 
     pub fn create_custodian_tx(&self, request_cells: Vec<(Cell, Transfer)>) -> Result<H256, Error> {
         // get queue cell
-        let (queue_cell, queue_cell_data) = self.get_rgbpp_queue_outbox_cell()?;
+        let (queue_cell, queue_cell_data) =
+            self.get_rgbpp_queue_cell(self.rgbpp_queue_lock_key_path.clone())?;
 
         // build new queue
         let mut request_ids = vec![];

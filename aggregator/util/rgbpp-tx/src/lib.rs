@@ -8,7 +8,10 @@ pub use crate::schemas::leap::{self, CrossChainQueue, Request, Requests};
 
 use aggregator_common::{
     error::Error,
-    utils::{privkey::get_sighash_lock_args_from_privkey, QUEUE_TYPE},
+    utils::{
+        privkey::{self, get_sighash_lock_args_from_privkey},
+        QUEUE_TYPE,
+    },
 };
 use ckb_app_config::{AssetConfig, LockConfig, ScriptConfig};
 use ckb_logger::{info, warn};
@@ -58,7 +61,7 @@ pub struct RgbppTxBuilder {
     rgbpp_scripts: HashMap<String, ScriptInfo>,
     rgbpp_custodian_lock_key_path: PathBuf,
     rgbpp_queue_lock_key_path: PathBuf,
-    _rgbpp_queue_inbox_lock_key_path: PathBuf,
+    rgbpp_queue_inbox_lock_key_path: PathBuf,
     rgbpp_ckb_provider_key_path: PathBuf,
     asset_types: HashMap<H256, AssetInfo>,
     asset_locks: HashMap<H256, Script>,
@@ -85,7 +88,7 @@ impl RgbppTxBuilder {
             rgbpp_scripts: get_script_map(rgbpp_script_config),
             rgbpp_custodian_lock_key_path,
             rgbpp_queue_lock_key_path,
-            _rgbpp_queue_inbox_lock_key_path: rgbpp_queue_inbox_lock_key_path,
+            rgbpp_queue_inbox_lock_key_path,
             rgbpp_ckb_provider_key_path,
             asset_types: get_asset_types(asset_types),
             asset_locks: get_asset_locks(asset_locks),
@@ -165,10 +168,12 @@ impl RgbppTxBuilder {
             .ok_or_else(|| Error::MissingScriptInfo(script_name.to_string()))
     }
 
-    fn build_message_queue_cell_search_option(&self) -> Result<CellQueryOptions, Error> {
+    fn build_message_queue_cell_search_option(
+        &self,
+        privkey: PathBuf,
+    ) -> Result<CellQueryOptions, Error> {
         let message_queue_type = self.get_rgbpp_script(QUEUE_TYPE)?;
-        let (message_queue_lock_args, _) =
-            get_sighash_lock_args_from_privkey(self.rgbpp_queue_lock_key_path.clone())?;
+        let (message_queue_lock_args, _) = get_sighash_lock_args_from_privkey(privkey)?;
         let message_queue_lock = Script::new_builder()
             .code_hash(SIGHASH_TYPE_HASH.pack())
             .hash_type(ScriptHashType::Type.into())

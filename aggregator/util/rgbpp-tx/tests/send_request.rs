@@ -263,7 +263,7 @@ fn build_request(
     (cell, data)
 }
 
-fn prepare_scripts() -> HashMap<String, ScriptInfo> {
+pub(crate) fn prepare_scripts() -> HashMap<String, ScriptInfo> {
     let mut rgbpp_script_config: Vec<ScriptConfig> = Vec::new();
     let xudt_script = r#"
     {
@@ -353,7 +353,10 @@ fn prepare_scripts() -> HashMap<String, ScriptInfo> {
     get_script_map(rgbpp_script_config)
 }
 
-fn get_rgbpp_cell_dep(script_name: &str, rgbpp_scripts: &HashMap<String, ScriptInfo>) -> CellDep {
+pub(crate) fn get_rgbpp_cell_dep(
+    script_name: &str,
+    rgbpp_scripts: &HashMap<String, ScriptInfo>,
+) -> CellDep {
     rgbpp_scripts
         .get(script_name)
         .map(|script_info| script_info.cell_dep.clone())

@@ -146,7 +146,7 @@ cell_dep = '''
     "dep_type": "dep_group",
     "out_point": {
         "index": "0x0",
-        "tx_hash": "0x3e06cbfb8d09033449d6c2b49a5cda673b6640de7b2fabaa0a53d7c52722a20f"
+        "tx_hash": "0xde836a3233cbd4904f60ec9bfb5a2055d15314b751c9c0d4acff37d5e402f003"
     }
 }
 '''
@@ -165,7 +165,7 @@ cell_dep = '''
     "dep_type": "code",
     "out_point": {
         "index": "0x5",
-        "tx_hash": "0xe0606c8041a51eae120d6fd7e3b0aa9966f2a2c05ca2921ea556f6e7de1fff4b"
+        "tx_hash": "0x1c21f865d6564c7b54e5a616adee365378b41b92e5c941cdf45c572c0c9e5811"
     }
 }
 '''
@@ -184,7 +184,7 @@ cell_dep = '''
     "dep_type": "code",
     "out_point": {
         "index": "0x6",
-        "tx_hash": "0xe0606c8041a51eae120d6fd7e3b0aa9966f2a2c05ca2921ea556f6e7de1fff4b"
+        "tx_hash": "0x1c21f865d6564c7b54e5a616adee365378b41b92e5c941cdf45c572c0c9e5811"
     }
 }
 '''
@@ -203,7 +203,7 @@ cell_dep = '''
     "dep_type": "code",
     "out_point": {
         "index": "0x7",
-        "tx_hash": "0xe0606c8041a51eae120d6fd7e3b0aa9966f2a2c05ca2921ea556f6e7de1fff4b"
+        "tx_hash": "0x1c21f865d6564c7b54e5a616adee365378b41b92e5c941cdf45c572c0c9e5811"
     }
 }
 '''

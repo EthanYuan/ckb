@@ -189,7 +189,7 @@ impl Storage {
         // Retrieve the stored value by height
         if let Some(value) = self
             .db
-            .get(&key)
+            .get(key)
             .map_err(|err: rocksdb::Error| Error::DatabaseError(err.to_string()))?
         {
             let stored_tx =

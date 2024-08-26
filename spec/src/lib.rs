@@ -953,7 +953,7 @@ impl IssuedCell {
                         .pack(),
                 )
                 .hash_type(ScriptHashType::Type.into())
-                .args(Bytes::from(b"4242".to_vec()).pack())
+                .args(Bytes::from(hex::decode("4242").unwrap()).pack())
                 .build();
 
             packed::CellOutput::new_builder()

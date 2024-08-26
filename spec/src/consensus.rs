@@ -281,6 +281,7 @@ impl ConsensusBuilder {
                 max_block_bytes: MAX_BLOCK_BYTES,
                 dao_type_hash: Byte32::default(),
                 token_manager_type_hash: Byte32::default(),
+                token_manager_outbox_type_hash: Byte32::default(),
                 secp256k1_blake160_sighash_all_type_hash: None,
                 secp256k1_blake160_multisig_all_type_hash: None,
                 genesis_epoch_ext,
@@ -360,6 +361,9 @@ impl ConsensusBuilder {
         // will be changed to use the type script shortly
         self.inner.token_manager_type_hash = self
             .get_lock_hash(OUTPUT_INDEX_TOKEN_MANAGER)
+            .unwrap_or_default();
+        self.inner.token_manager_outbox_type_hash = self
+            .get_lock_hash(OUTPUT_INDEX_TOKEN_MANAGER + 1)
             .unwrap_or_default();
         self.inner.secp256k1_blake160_sighash_all_type_hash =
             self.get_type_hash(OUTPUT_INDEX_SECP256K1_BLAKE160_SIGHASH_ALL);
@@ -530,6 +534,8 @@ pub struct Consensus {
     pub dao_type_hash: Byte32,
     /// The token manager type hash
     pub token_manager_type_hash: Byte32,
+    /// The token manager type hash
+    pub token_manager_outbox_type_hash: Byte32,
     /// The secp256k1_blake160_sighash_all_type_hash
     ///
     /// [SECP256K1/blake160](https://github.com/nervosnetwork/rfcs/blob/master/rfcs/0024-ckb-genesis-script-list/0024-ckb-genesis-script-list.md#secp256k1blake160)
@@ -648,6 +654,11 @@ impl Consensus {
     /// The token manager type hash
     pub fn token_manager_type_hash(&self) -> Byte32 {
         self.token_manager_type_hash.clone()
+    }
+
+    /// The token manager type hash
+    pub fn token_manager_outbox_type_hash(&self) -> Byte32 {
+        self.token_manager_outbox_type_hash.clone()
     }
 
     /// The secp256k1_blake160_sighash_all_type_hash

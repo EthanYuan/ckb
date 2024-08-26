@@ -31,7 +31,10 @@ pub(crate) fn check_tx_fee(
     rtx: &ResolvedTransaction,
     tx_size: usize,
 ) -> Result<Capacity, Reject> {
-    if rtx.is_leap_tx(&snapshot.consensus().token_manager_type_hash) {
+    if rtx.is_leap_tx(
+        &snapshot.consensus().token_manager_type_hash,
+        &snapshot.consensus().token_manager_outbox_type_hash,
+    ) {
         return Ok(Capacity::zero());
     }
 

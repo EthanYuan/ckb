@@ -44,6 +44,10 @@ capacity = 1_0000_0000
 file = { bundled = "request-cell-lock" }
 create_type_id = true
 capacity = 1_0000_0000
+[[genesis.system_cells]]
+file = { bundled = "always_success" }
+create_type_id = true
+capacity = 1_0000_0000
 
 [genesis.system_cells_lock]
 code_hash = "0x0000000000000000000000000000000000000000000000000000000000000000"

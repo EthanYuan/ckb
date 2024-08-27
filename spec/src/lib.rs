@@ -67,7 +67,7 @@ pub const OUTPUT_INDEX_SECP256K1_DATA: u64 = 3;
 /// The output index of SECP256K1/multisig script in the genesis no.0 transaction
 pub const OUTPUT_INDEX_SECP256K1_BLAKE160_MULTISIG_ALL: u64 = 4;
 /// The output index of Token Manager script in the genesis no.0 transaction
-pub const OUTPUT_INDEX_TOKEN_MANAGER: u64 = 10;
+pub const OUTPUT_INDEX_TOKEN_MANAGER: u64 = 11;
 
 /// The CKB block chain specification
 #[derive(Clone, PartialEq, Eq, Debug, Serialize, Deserialize)]
@@ -946,10 +946,27 @@ impl GenesisCell {
 
 impl IssuedCell {
     fn build_output(&self) -> packed::CellOutput {
-        packed::CellOutput::new_builder()
-            .lock(self.lock.clone().into())
-            .capacity(self.capacity.pack())
-            .build()
+        if self.with_queue {
+            let type_ = packed::ScriptBuilder::default()
+                .code_hash(
+                    h256!("0x9c6933d977360f115a3e9cd5a2e0e475853681b80d775d93ad0f8969da343e56")
+                        .pack(),
+                )
+                .hash_type(ScriptHashType::Type.into())
+                .args(Bytes::from(hex::decode("4242").unwrap()).pack())
+                .build();
+
+            packed::CellOutput::new_builder()
+                .capacity(self.capacity.pack())
+                .lock(self.lock.clone().into())
+                .type_(Some(type_).pack())
+                .build()
+        } else {
+            packed::CellOutput::new_builder()
+                .lock(self.lock.clone().into())
+                .capacity(self.capacity.pack())
+                .build()
+        }
     }
 }
 

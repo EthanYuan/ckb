@@ -282,11 +282,16 @@ impl ResolvedTransaction {
     }
 
     /// Returns true if the transaction is leap transaction.
-    pub fn is_leap_tx(&self, token_manager_type_hash: &Byte32) -> bool {
+    pub fn is_leap_tx(
+        &self,
+        token_manager_type_hash: &Byte32,
+        token_manager_outbox_type_hash: &Byte32,
+    ) -> bool {
         self.resolved_inputs.iter().any(|cell_meta| {
             Self::cell_uses_token_manager_lock_script(
                 &cell_meta.cell_output,
                 token_manager_type_hash,
+                token_manager_outbox_type_hash,
             )
         })
     }
@@ -294,10 +299,12 @@ impl ResolvedTransaction {
     fn cell_uses_token_manager_lock_script(
         cell_output: &CellOutput,
         token_manager_type_hash: &Byte32,
+        token_manager_outbox_type_hash: &Byte32,
     ) -> bool {
         // Dummy implementation, currently using the hash of the lock script,
         // will be changed to use the type script shortly
         &cell_output.lock().calc_script_hash() == token_manager_type_hash
+            || &cell_output.lock().calc_script_hash() == token_manager_outbox_type_hash
     }
 
     /// TODO(doc): @quake

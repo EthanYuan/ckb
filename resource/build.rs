@@ -22,6 +22,7 @@ fn main() {
         "default.db-options",
         "xudt_rce",
         "request-cell-lock",
+        "always_success",
     ] {
         bundled
             .add_file(f, Compression::Gzip)

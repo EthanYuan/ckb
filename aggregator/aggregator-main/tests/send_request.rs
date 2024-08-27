@@ -1,6 +1,6 @@
 use aggregator_common::types::RequestType;
-use aggregator_rgbpp_tx::{
-    leap::{self, MessageUnion, RequestContent, Transfer},
+use aggregator_main::{
+    schemas::leap::{self, MessageUnion, RequestContent, Transfer},
     ScriptInfo, SIGHASH_TYPE_HASH,
 };
 use ckb_app_config::ScriptConfig;
@@ -35,43 +35,32 @@ use std::collections::HashMap;
 #[test]
 #[ignore]
 fn send_request() {
-    // rgbpp CKB provider
-    // address:
-    //   mainnet: ckb1qzda0cr08m85hc8jlnfp3zer7xulejywt49kt2rr0vthywaa50xwsqdqculgfkp8hpc88g4quezgjgv8p5g56qs4hh5xp
-    //   testnet: ckt1qzda0cr08m85hc8jlnfp3zer7xulejywt49kt2rr0vthywaa50xwsqdqculgfkp8hpc88g4quezgjgv8p5g56qsm9umve
-    // address(deprecated):
-    //   mainnet: ckb1qyq2p3e7snvz0wrsww32pejy3yscwrg3f5pqrrkuvg
-    //   testnet: ckt1qyq2p3e7snvz0wrsww32pejy3yscwrg3f5pq7xgrq5
-    // lock_arg: 0xa0c73e84d827b87073a2a0e6448921870d114d02
-    // lock_hash: 0xdb66c34c8eff03fbeb03a22441d9506cda8c7ae5b431b4fccd5682dca67818a5
-    // private key: 6b726167f8d0b2b8722b9a3f0cfdc67d43f1622666a6fda6b32da76a3824e52e
-
     let ckb_provider_lock_privkey =
         h256!("0x6b726167f8d0b2b8722b9a3f0cfdc67d43f1622666a6fda6b32da76a3824e52e");
     let ckb_provider_lock_args = h160!("0xa0c73e84d827b87073a2a0e6448921870d114d02").as_bytes();
 
-    let rgbpp_uri = "https://testnet.ckb.dev";
+    let branch_uri = "http://localhost:8114";
 
     let message_queue_type_id =
-        h256!("0xd9911b00409a9f443ae7ed6b00d59dd1e33979e4c986478cf7863fcb7f62941b");
+        h256!("0xd1affd2e1d88d8f44ddace885e740687b6b7fc82545410dac513362942bf34be");
     let request_lock_code_hash =
-        h256!("0x2fca96b423bd2b4d0d4b5098bf7a3e74ea42c3f2e1bb6f973f7c1c68adfa3d9c");
+        h256!("0x1a1e4fef34f5982906f745b048fe7b1089647e82346074e0f32c2ece26cf6b1e");
     let xudt_code_hash =
-        h256!("0x25c29dc317811a6f6f3985a7a9ebc4838bd388d19d0feeecf0bcd60f6c0975bb");
+        h256!("0x6283a479a3cf5d4276cd93594de9f1827ab9b55c7b05b3d28e4c2e0a696cfefd");
 
     // input
-    println!("send request");
     let out_point = OutPoint::new(
-        h256!("0xd87b596d4d24dc6ba7b99318153414b621c96ddee3c88410159f8e75b974f428").pack(),
+        h256!("0x32f7ef35ea6fda741ff7613d992c84115096bae05e6ffa47c6c054f8a0b2cbda").pack(),
         0,
     );
     let input = CellInput::new_builder()
         .previous_output(out_point.clone().clone())
         .build();
-    let rgbpp_rpc_client = RpcClient::new(rgbpp_uri);
-    let input_cell = rgbpp_rpc_client
+    let branch_rpc_client = RpcClient::new(branch_uri);
+    let input_cell = branch_rpc_client
         .get_live_cell(out_point.clone().into(), true)
         .unwrap();
+    println!("input_cell: {:?}", input_cell);
     let input_cell = input_cell.cell.unwrap();
     let tx_input = TransactionInput {
         live_cell: LiveCell {
@@ -107,7 +96,7 @@ fn send_request() {
         ))
         .build();
     let request_content = RequestContent::new_builder()
-        .request_type(Byte::new(RequestType::CkbToBranch as u8))
+        .request_type(Byte::new(RequestType::BranchToCkb as u8))
         .target_chain_id(branch_chain_id.pack())
         .message(message)
         .build();
@@ -122,10 +111,10 @@ fn send_request() {
 
     // cell deps
     let scripts = prepare_scripts();
-    let secp256k1_cell_dep = get_rgbpp_cell_dep("secp256k1_blake160", &scripts);
-    let xudt_cell_dep = get_rgbpp_cell_dep("xudt", &scripts);
-    let request_cell_dep = get_rgbpp_cell_dep("request_lock", &scripts);
-    let queue_type_cell_dep = get_rgbpp_cell_dep("queue_type", &scripts);
+    let secp256k1_cell_dep = get_branch_cell_dep("secp256k1_blake160", &scripts);
+    let xudt_cell_dep = get_branch_cell_dep("xudt", &scripts);
+    let request_cell_dep = get_branch_cell_dep("request_lock", &scripts);
+    let queue_type_cell_dep = get_branch_cell_dep("queue_type", &scripts);
 
     // create transaction
     let mut tx_builder = TransactionBuilder::default();
@@ -161,7 +150,7 @@ fn send_request() {
     }
 
     // balance transaction
-    let network_info = NetworkInfo::new(NetworkType::Testnet, rgbpp_uri.to_string());
+    let network_info = NetworkInfo::new(NetworkType::Testnet, branch_uri.to_string());
     let fee_rate = 3000;
     let configuration = {
         let mut config =
@@ -186,6 +175,7 @@ fn send_request() {
     let mut tx_with_groups = {
         let mut check_result = None;
         for (mut input_index, input) in iterator.enumerate() {
+            println!("{:?}", input);
             input_index += 1;
             let input = input.unwrap();
             tx_builder.input(input.cell_input());
@@ -229,7 +219,7 @@ fn send_request() {
         "request tx: {}",
         serde_json::to_string_pretty(&tx_json).unwrap()
     );
-    let tx_hash = rgbpp_rpc_client
+    let tx_hash = branch_rpc_client
         .send_transaction(tx_json.inner, None)
         .unwrap();
     println!("request tx send: {:?}", tx_hash.pack());
@@ -256,7 +246,7 @@ fn build_request(
     let cell = CellOutput::new_builder()
         .lock(request_lock)
         .type_(Some(token_script).pack())
-        .capacity(500_0000_0000.pack())
+        .capacity(1_0000_0000.pack())
         .build();
     let buf: [u8; 16] = amount.to_le_bytes();
     let data = buf.to_vec().into();
@@ -268,7 +258,7 @@ pub(crate) fn prepare_scripts() -> HashMap<String, ScriptInfo> {
     let xudt_script = r#"
     {
         "args": "0x",
-        "code_hash": "0x25c29dc317811a6f6f3985a7a9ebc4838bd388d19d0feeecf0bcd60f6c0975bb",
+        "code_hash": "0x6283a479a3cf5d4276cd93594de9f1827ab9b55c7b05b3d28e4c2e0a696cfefd",
         "hash_type": "type"
     }
     "#;
@@ -276,8 +266,8 @@ pub(crate) fn prepare_scripts() -> HashMap<String, ScriptInfo> {
     {
         "dep_type": "code",
         "out_point": {
-            "index": "0x0",
-            "tx_hash": "0xbf6fb538763efec2a70a6a3dcb7242787087e1030c4e7d86585bc63a9d337f5f"
+            "index": "0x5",
+            "tx_hash": "0x1c21f865d6564c7b54e5a616adee365378b41b92e5c941cdf45c572c0c9e5811"
         }
     }
     "#;
@@ -289,7 +279,7 @@ pub(crate) fn prepare_scripts() -> HashMap<String, ScriptInfo> {
     let request_lock = r#"
     {
         "args": "0x",
-        "code_hash": "0x2fca96b423bd2b4d0d4b5098bf7a3e74ea42c3f2e1bb6f973f7c1c68adfa3d9c",
+        "code_hash": "0x1a1e4fef34f5982906f745b048fe7b1089647e82346074e0f32c2ece26cf6b1e",
         "hash_type": "type"
     }
     "#;
@@ -297,8 +287,8 @@ pub(crate) fn prepare_scripts() -> HashMap<String, ScriptInfo> {
     {
         "dep_type": "code",
         "out_point": {
-            "index": "0x0",
-            "tx_hash": "0x79e7a69cf175cde1d8f4fd1f7f5c9792cf07b4099a4a75946393ac6616b7aa0b"
+            "index": "0x6",
+            "tx_hash": "0x1c21f865d6564c7b54e5a616adee365378b41b92e5c941cdf45c572c0c9e5811"
         }
     }
     "#;
@@ -310,7 +300,7 @@ pub(crate) fn prepare_scripts() -> HashMap<String, ScriptInfo> {
     let queue_type_script = r#"
     {
         "args": "0x4242",
-        "code_hash": "0x2da1e80cec3e553a76e22d826b63ce5f65d77622de48caa5a2fe724b0f9a18f2",
+        "code_hash": "0x9c6933d977360f115a3e9cd5a2e0e475853681b80d775d93ad0f8969da343e56",
         "hash_type": "type"
     }
     "#;
@@ -318,8 +308,8 @@ pub(crate) fn prepare_scripts() -> HashMap<String, ScriptInfo> {
     {
         "dep_type": "code",
         "out_point": {
-            "index": "0x0",
-            "tx_hash": "0xeb4614bc1d8b2aadb928758c77a07720f1794418d0257a61bac94240d4c21905"
+            "index": "0x7",
+            "tx_hash": "0x1c21f865d6564c7b54e5a616adee365378b41b92e5c941cdf45c572c0c9e5811"
         }
     }
     "#;
@@ -340,7 +330,7 @@ pub(crate) fn prepare_scripts() -> HashMap<String, ScriptInfo> {
         "dep_type": "dep_group",
         "out_point": {
             "index": "0x0",
-            "tx_hash": "0xf8de3bb47d055cdf460d93a2a6e1b05f7432f9777c8c474abf4eec1d4aee5d37"
+            "tx_hash": "0xde836a3233cbd4904f60ec9bfb5a2055d15314b751c9c0d4acff37d5e402f003"
         }
     }
     "#;
@@ -353,11 +343,11 @@ pub(crate) fn prepare_scripts() -> HashMap<String, ScriptInfo> {
     get_script_map(rgbpp_script_config)
 }
 
-pub(crate) fn get_rgbpp_cell_dep(
+pub(crate) fn get_branch_cell_dep(
     script_name: &str,
-    rgbpp_scripts: &HashMap<String, ScriptInfo>,
+    branch_scripts: &HashMap<String, ScriptInfo>,
 ) -> CellDep {
-    rgbpp_scripts
+    branch_scripts
         .get(script_name)
         .map(|script_info| script_info.cell_dep.clone())
         .unwrap()

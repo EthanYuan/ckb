@@ -96,6 +96,7 @@ members = [
   "ckb-bin",
   "branch-chain-producer",
   "aggregator/util/common",
+  "aggregator/util/storage",
   "aggregator/util/rgbpp-tx", 
   "aggregator/aggregator-main"]
 

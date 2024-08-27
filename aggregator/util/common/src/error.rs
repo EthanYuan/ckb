@@ -10,6 +10,8 @@ pub enum Error {
     QueueCellDataDecodeError(String),
     #[error("outbox has unprocessed requests, cannot add new ones")]
     QueueOutboxHasUnprocessedRequests,
+    #[error("inbox has unprocessed requests, cannot add new ones")]
+    QueueInboxHasUnprocessedRequests,
     #[error("queue cell data error: {0}")]
     QueueCellDataError(String),
     #[error("missing script info: {0}")]
@@ -24,12 +26,20 @@ pub enum Error {
     TransactionParseError(String),
     #[error("rpc error: {0}")]
     RpcError(String),
-    #[error("Timeout: {0}")]
+    #[error("timeout: {0}")]
     TimedOut(String),
-    #[error("Lock not found: {0}")]
+    #[error("branch script not found: {0}")]
+    ScriptNotFound(String),
+    #[error("lock not found: {0}")]
     LockNotFound(String),
-    #[error("Branch script not found: {0}")]
-    BranchScriptNotFound(String),
+    #[error("asset type not found: {0}")]
+    AssetTypeNotFound(String),
+    #[error("database error: {0}")]
+    DatabaseError(String),
+    #[error("transaction not found: {0}")]
+    TransactionNotFound(String),
+    #[error("insufficient XUDT to unlock: {0}")]
+    InsufficientXUDTtoUnlock(String),
     #[error("other error: {0}")]
     Other(String),
 }

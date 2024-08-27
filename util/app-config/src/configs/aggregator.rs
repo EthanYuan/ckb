@@ -5,6 +5,9 @@ use std::path::{Path, PathBuf};
 /// Aggregator config options.
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct AggregatorConfig {
+    /// The challenge period, default 80 blocks
+    #[serde(default)]
+    pub challenge_period: u64,
     /// RGB++ URI
     #[serde(default)]
     pub rgbpp_uri: String,
@@ -18,6 +21,9 @@ pub struct AggregatorConfig {
     /// RGB++ queue cell lock key path
     #[serde(default)]
     pub rgbpp_queue_lock_key_path: PathBuf,
+    /// RGB++ queue inbox cell lock key path
+    #[serde(default)]
+    pub rgbpp_queue_inbox_lock_key_path: PathBuf,
     /// RGB++ custodian lock key path
     #[serde(default)]
     pub rgbpp_custodian_lock_key_path: PathBuf,
@@ -30,6 +36,9 @@ pub struct AggregatorConfig {
     /// Branch Chain token manager lock key path
     #[serde(default)]
     pub branch_chain_token_manager_lock_key_path: PathBuf,
+    /// Branch Chain token manager with outbox key path
+    #[serde(default)]
+    pub branch_chain_token_manager_outbox_lock_key_path: PathBuf,
     /// RGB++ scripts
     #[serde(default)]
     pub rgbpp_scripts: Vec<ScriptConfig>,
@@ -38,10 +47,10 @@ pub struct AggregatorConfig {
     pub branch_scripts: Vec<ScriptConfig>,
     /// Asset configs
     #[serde(default)]
-    pub rgbpp_assets: Vec<AssetConfig>,
+    pub asset_types: Vec<AssetConfig>,
     /// Lock configs
     #[serde(default)]
-    pub rgbpp_asset_locks: Vec<LockConfig>,
+    pub asset_locks: Vec<LockConfig>,
 }
 
 /// Script config options.
@@ -80,18 +89,21 @@ pub struct LockConfig {
 impl Default for AggregatorConfig {
     fn default() -> Self {
         AggregatorConfig {
+            challenge_period: 80,
             store: PathBuf::new(),
             rgbpp_uri: "https://testnet.ckb.dev".to_string(),
             rgbpp_ckb_provider_key_path: PathBuf::new(),
             rgbpp_queue_lock_key_path: PathBuf::new(),
+            rgbpp_queue_inbox_lock_key_path: PathBuf::new(),
             rgbpp_custodian_lock_key_path: PathBuf::new(),
             branch_uri: "http://localhost:8114".to_string(),
             branch_chain_capacity_provider_key_path: PathBuf::new(),
             branch_chain_token_manager_lock_key_path: PathBuf::new(),
+            branch_chain_token_manager_outbox_lock_key_path: PathBuf::new(),
             rgbpp_scripts: Vec::new(),
             branch_scripts: Vec::new(),
-            rgbpp_assets: Vec::new(),
-            rgbpp_asset_locks: Vec::new(),
+            asset_types: Vec::new(),
+            asset_locks: Vec::new(),
         }
     }
 }

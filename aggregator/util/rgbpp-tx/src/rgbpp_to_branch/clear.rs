@@ -1,4 +1,4 @@
-use crate::RgbppTxBuilder;
+use crate::{RgbppTxBuilder, SIGHASH_TYPE_HASH};
 
 use aggregator_common::{
     error::Error,
@@ -20,7 +20,6 @@ use ckb_sdk::{
 };
 use ckb_types::{
     core::ScriptHashType,
-    h256,
     packed::{Byte32, Bytes as PackedBytes, CellInput, Script},
     prelude::*,
     H256,
@@ -29,13 +28,11 @@ use molecule::prelude::Entity;
 
 use std::collections::HashMap;
 
-pub const SIGHASH_TYPE_HASH: H256 =
-    h256!("0x9bd7e06f3ecf4be0f2fcd2188b23f1b9fcc88e5d4b65a8637b17723bbda3cce8");
-
 impl RgbppTxBuilder {
     pub fn create_clear_queue_tx(&self) -> Result<H256, Error> {
         // get queue cell
-        let (queue_cell, queue_cell_data) = self.get_rgbpp_queue_cell()?;
+        let (queue_cell, queue_cell_data) =
+            self.get_rgbpp_queue_cell(self.rgbpp_queue_lock_key_path.clone())?;
         info!(
             "The queue contains {} items that need to be cleared.",
             queue_cell_data.outbox().len()

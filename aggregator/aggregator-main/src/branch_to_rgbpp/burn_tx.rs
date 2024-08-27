@@ -12,7 +12,7 @@ use aggregator_common::{
     },
 };
 use ckb_jsonrpc_types::TransactionView;
-use ckb_logger::{info, debug};
+use ckb_logger::{debug, info};
 use ckb_sdk::{
     core::TransactionBuilder,
     rpc::ckb_indexer::{Cell, Order},

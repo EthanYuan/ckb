@@ -68,7 +68,7 @@ impl Storage {
     }
 
     /// Updates the status of a specific height to `Commit`, with validation of `tx`
-    pub fn commit_branch_request(&self, height: u64, expected_tx: H256) -> Result<(), Error> {
+    pub fn commit_branch_request(&self, height: u64) -> Result<(), Error> {
         let key = height.to_be_bytes();
 
         let value = self
@@ -79,16 +79,6 @@ impl Storage {
             Some(val) => val,
             None => return Err(DatabaseError("Height not found in the database".into())),
         };
-
-        let stored_tx = H256::from_slice(&value[1..33])
-            .map_err(|_| DatabaseError("Failed to parse stored transaction".into()))?;
-
-        // Verify that the provided tx matches the stored tx
-        if stored_tx != expected_tx {
-            return Err(DatabaseError(
-                "Transaction hash does not match the stored value".into(),
-            ));
-        }
 
         let mut value = value.to_vec(); // Convert DBVector to Vec<u8> for mutability
         value[0] = BranchRequestStatus::Commit.into(); // Update status to `Commit`
@@ -285,7 +275,7 @@ mod tests {
 
         // Commit the first request
         store
-            .commit_branch_request(1, H256::default())
+            .commit_branch_request(1)
             .expect("failed to commit height 1");
 
         // Check if the earliest pending is now 2
@@ -307,10 +297,10 @@ mod tests {
             .insert_branch_request(2, H256::default())
             .expect("failed to insert request 2");
         store
-            .commit_branch_request(1, H256::default())
+            .commit_branch_request(1)
             .expect("failed to commit height 1");
         store
-            .commit_branch_request(2, H256::default())
+            .commit_branch_request(2)
             .expect("failed to commit height 2");
 
         // Check if there is no pending request left
@@ -337,20 +327,6 @@ mod tests {
             .get_earliest_pending()
             .expect("failed to get earliest pending");
         assert_eq!(earliest_pending, Some((1, H256::default())));
-    }
-
-    #[test]
-    fn test_commit_height_invalid_tx() {
-        let store = setup_store();
-
-        // Insert branch requests
-        store
-            .insert_branch_request(1, H256::default())
-            .expect("failed to insert request 1");
-
-        // Attempt to commit with an invalid tx
-        let result = store.commit_branch_request(1, H256::from_slice(&[1u8; 32]).unwrap());
-        assert!(result.is_err());
     }
 
     #[test]

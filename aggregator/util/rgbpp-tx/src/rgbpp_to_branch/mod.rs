@@ -5,7 +5,7 @@ pub use crate::schemas::leap::{CrossChainQueue, Request, Requests};
 use crate::RgbppTxBuilder;
 
 use aggregator_common::error::Error;
-use ckb_logger::{info, debug};
+use ckb_logger::{debug, info};
 use ckb_sdk::{
     rpc::ckb_indexer::{Cell, Order},
     traits::LiveCell,

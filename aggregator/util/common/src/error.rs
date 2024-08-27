@@ -10,6 +10,8 @@ pub enum Error {
     QueueCellDataDecodeError(String),
     #[error("outbox has unprocessed requests, cannot add new ones")]
     QueueOutboxHasUnprocessedRequests,
+    #[error("inbox has unprocessed requests, cannot add new ones")]
+    QueueInboxHasUnprocessedRequests,
     #[error("queue cell data error: {0}")]
     QueueCellDataError(String),
     #[error("missing script info: {0}")]

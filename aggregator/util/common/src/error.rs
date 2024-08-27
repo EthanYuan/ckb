@@ -28,14 +28,18 @@ pub enum Error {
     RpcError(String),
     #[error("timeout: {0}")]
     TimedOut(String),
+    #[error("branch script not found: {0}")]
+    ScriptNotFound(String),
     #[error("lock not found: {0}")]
     LockNotFound(String),
-    #[error("branch script not found: {0}")]
-    BranchScriptNotFound(String),
+    #[error("asset type not found: {0}")]
+    AssetTypeNotFound(String),
     #[error("database error: {0}")]
     DatabaseError(String),
     #[error("transaction not found: {0}")]
     TransactionNotFound(String),
+    #[error("insufficient XUDT to unlock: {0}")]
+    InsufficientXUDTtoUnlock(String),
     #[error("other error: {0}")]
     Other(String),
 }

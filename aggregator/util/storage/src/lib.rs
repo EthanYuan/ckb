@@ -60,7 +60,7 @@ impl Storage {
         // If this is the first pending request or if the earliest_pending is not set, update it
         if self.get_earliest_pending()?.is_none() {
             self.db
-                .put(b"earliest_pending", &key)
+                .put(b"earliest_pending", key)
                 .map_err(|err: rocksdb::Error| Error::DatabaseError(err.to_string()))?;
         }
 
@@ -146,9 +146,8 @@ impl Storage {
     pub fn get_last_branch_request(
         &self,
     ) -> Result<Option<(u64, BranchRequestStatus, H256)>, Error> {
-        let mut iter = self.db.iterator(IteratorMode::End);
-
-        while let Some((key, value)) = iter.next() {
+        let iter = self.db.iterator(IteratorMode::End);
+        for (key, value) in iter {
             // Only process keys that have the correct length for a u64 height (8 bytes)
             if key.len() == 8 {
                 let height = u64::from_be_bytes(key.as_ref().try_into().map_err(

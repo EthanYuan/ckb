@@ -174,6 +174,23 @@ impl Aggregator {
                     }
                 }
             }
+
+            let unlock_tx = self.rgbpp_tx_builder.create_unlock_tx();
+            let unlock_tx = match unlock_tx {
+                Ok(unlock_tx) => unlock_tx,
+                Err(e) => {
+                    error!("{}", e.to_string());
+                    continue;
+                }
+            };
+            match wait_for_tx_confirmation(
+                self.rgbpp_rpc_client.clone(),
+                H256(unlock_tx.0),
+                Duration::from_secs(30),
+            ) {
+                Ok(_) => {}
+                Err(e) => error!("{}", e.to_string()),
+            }
         }
     }
 
@@ -281,7 +298,7 @@ impl Aggregator {
         let tx: Transaction = tx.into();
         let witness = tx
             .witnesses()
-            .get(0 as usize)
+            .get(0_usize)
             .ok_or(Error::TransactionParseError(
                 "get witness error: None".to_string(),
             ))?;

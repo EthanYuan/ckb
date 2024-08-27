@@ -44,7 +44,7 @@ impl Aggregator {
                         }
                         None => {
                             let height = self.wait_for_transaction_packing(tx_hash.clone())?;
-                            self.store.insert_branch_request(height.into(), tx_hash)?;
+                            self.store.insert_branch_request(height, tx_hash)?;
                             self.store.clear_staged_tx()?;
                         }
                     }

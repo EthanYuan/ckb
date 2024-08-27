@@ -118,7 +118,7 @@ impl Aggregator {
                 let xudt = &self
                     .branch_scripts
                     .get(XUDT)
-                    .ok_or(Error::BranchScriptNotFound(XUDT.to_string()))?
+                    .ok_or(Error::ScriptNotFound(XUDT.to_string()))?
                     .script;
                 let owner_lock: Script = token_manager_cell.output.lock.clone().into();
                 let type_ = xudt

@@ -1,3 +1,5 @@
+#![allow(missing_docs)]
+
 //! Branch Chain Aggregator
 
 pub(crate) mod branch_to_rgbpp;

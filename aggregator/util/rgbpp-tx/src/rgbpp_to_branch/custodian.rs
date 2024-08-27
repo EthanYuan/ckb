@@ -69,7 +69,7 @@ impl RgbppTxBuilder {
                 .map_err(|e| Error::LiveCellNotFound(e.to_string()))?;
 
             if request_cells.objects.is_empty() {
-                info!("No more request cells found");
+                debug!("No more request cells found");
                 break;
             }
             cursor = Some(request_cells.last_cursor);

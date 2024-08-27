@@ -12,7 +12,7 @@ use aggregator_common::{
     },
 };
 use ckb_jsonrpc_types::TransactionView;
-use ckb_logger::info;
+use ckb_logger::{info, debug};
 use ckb_sdk::{
     core::TransactionBuilder,
     rpc::ckb_indexer::{Cell, Order},
@@ -62,7 +62,7 @@ impl Aggregator {
                 .map_err(|e| Error::LiveCellNotFound(e.to_string()))?;
 
             if request_cells.objects.is_empty() {
-                info!("No more request cells found");
+                debug!("No more request cells found");
                 break;
             }
             cursor = Some(request_cells.last_cursor);

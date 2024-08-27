@@ -5,7 +5,7 @@ pub use crate::schemas::leap::{CrossChainQueue, Request, Requests};
 use crate::RgbppTxBuilder;
 
 use aggregator_common::error::Error;
-use ckb_logger::info;
+use ckb_logger::{info, debug};
 use ckb_sdk::{
     rpc::ckb_indexer::{Cell, Order},
     traits::LiveCell,
@@ -22,7 +22,7 @@ impl RgbppTxBuilder {
         let (queue_cell, queue_cell_data) =
             self.get_rgbpp_queue_cell(self.rgbpp_queue_lock_key_path.clone())?;
         if queue_cell_data.outbox().is_empty() {
-            info!("No requests in queue");
+            debug!("No requests in queue");
             return Ok((vec![], OutPoint::default()));
         }
         let request_ids: Vec<Byte32> = queue_cell_data.outbox().into_iter().collect();

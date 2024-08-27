@@ -69,7 +69,7 @@ impl Aggregator {
             config.rgbpp_scripts.clone(),
             config.rgbpp_custodian_lock_key_path.clone(),
             config.rgbpp_queue_lock_key_path.clone(),
-            config.rgbpp_queue_lock_inbox_key_path.clone(),
+            config.rgbpp_queue_inbox_lock_key_path.clone(),
             config.rgbpp_ckb_provider_key_path.clone(),
             config.asset_types.clone(),
             config.asset_locks.clone(),

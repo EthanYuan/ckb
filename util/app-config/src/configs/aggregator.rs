@@ -23,7 +23,7 @@ pub struct AggregatorConfig {
     pub rgbpp_queue_lock_key_path: PathBuf,
     /// RGB++ queue inbox cell lock key path
     #[serde(default)]
-    pub rgbpp_queue_lock_inbox_key_path: PathBuf,
+    pub rgbpp_queue_inbox_lock_key_path: PathBuf,
     /// RGB++ custodian lock key path
     #[serde(default)]
     pub rgbpp_custodian_lock_key_path: PathBuf,
@@ -94,7 +94,7 @@ impl Default for AggregatorConfig {
             rgbpp_uri: "https://testnet.ckb.dev".to_string(),
             rgbpp_ckb_provider_key_path: PathBuf::new(),
             rgbpp_queue_lock_key_path: PathBuf::new(),
-            rgbpp_queue_lock_inbox_key_path: PathBuf::new(),
+            rgbpp_queue_inbox_lock_key_path: PathBuf::new(),
             rgbpp_custodian_lock_key_path: PathBuf::new(),
             branch_uri: "http://localhost:8114".to_string(),
             branch_chain_capacity_provider_key_path: PathBuf::new(),

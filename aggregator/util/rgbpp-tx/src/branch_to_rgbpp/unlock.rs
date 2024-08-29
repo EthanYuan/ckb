@@ -40,9 +40,9 @@ impl RgbppTxBuilder {
             self.get_rgbpp_queue_cell(self.rgbpp_queue_inbox_lock_key_path.clone())?;
         info!(
             "The queue inbox contains {} requests that need to be unlock.",
-            queue_cell_data.outbox().len()
+            queue_cell_data.inbox().len()
         );
-        if queue_cell_data.outbox().is_empty() {
+        if queue_cell_data.inbox().is_empty() {
             return Ok(H256::default());
         }
 
@@ -161,10 +161,6 @@ impl RgbppTxBuilder {
         // custodian lock script
         let (custodian_lock_script_args, custodian_lock_key) =
             get_sighash_lock_args_from_privkey(self.rgbpp_custodian_lock_key_path.clone())?;
-        info!(
-            "Custodian lock script args: {:?}",
-            custodian_lock_script_args
-        );
         let custodian_lock_script = Script::new_builder()
             .code_hash(SIGHASH_TYPE_HASH.pack())
             .hash_type(ScriptHashType::Type.into())

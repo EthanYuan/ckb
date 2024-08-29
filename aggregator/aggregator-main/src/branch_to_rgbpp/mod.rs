@@ -150,34 +150,29 @@ impl Aggregator {
                             tx_hash.0.into(),
                             requests_in_witness.raw_data(),
                         );
-                        let inbox_tx = match inbox_tx {
-                            Ok(inbox_tx) => {
-                                H256::from_slice(inbox_tx.as_bytes()).expect("unlock tx to H256")
+                        let _ = match inbox_tx {
+                            Ok(_) => {
+                                self.store
+                                    .commit_branch_request(height)
+                                    .expect("commit branch request");
                             }
                             Err(e) => {
                                 error!("{}", e.to_string());
                                 continue;
                             }
                         };
-                        match wait_for_tx_confirmation(
-                            self.rgbpp_rpc_client.clone(),
-                            H256(inbox_tx.0),
-                            Duration::from_secs(30),
-                        ) {
-                            Ok(_) => {
-                                self.store
-                                    .commit_branch_request(height)
-                                    .expect("commit branch request");
-                            }
-                            Err(e) => error!("{}", e.to_string()),
-                        }
                     }
                 }
             }
 
             let unlock_tx = self.rgbpp_tx_builder.create_unlock_tx();
             let unlock_tx = match unlock_tx {
-                Ok(unlock_tx) => unlock_tx,
+                Ok(unlock_tx) => {
+                    if H256(unlock_tx.0) == H256::default() {
+                        continue;
+                    }
+                    unlock_tx
+                }
                 Err(e) => {
                     error!("{}", e.to_string());
                     continue;
